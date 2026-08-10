@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlogSphere - Modern Blog Platform</title>
+    <meta name="description" content="BlogSphere is a modern blog platform built for developers, writers, and tech enthusiasts.">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fa-solid fa-feather" style="color: var(--primary-color);"></i> BlogSphere</a>
+            
+            <button class="mobile-menu-btn" aria-label="Toggle Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li class="guest-link"><a href="login.html">Login</a></li>
+                <li class="guest-link"><a href="register.html" class="btn btn-primary" style="color: white; padding: 0.5rem 1rem;">Register</a></li>
+                
+                <li class="auth-link" style="display: none;"><a href="dashboard.html">Dashboard</a></li>
+                <li class="auth-link" style="display: none;"><a href="create-blog.html">Create Blog</a></li>
+                <li class="auth-link" style="display: none;"><a href="#" id="logoutBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h1>Share Your Voice With The World</h1>
+                <p>BlogSphere is the perfect platform to read, write, and share your ideas about technology, web development, and career growth.</p>
+                <div class="hero-btns">
+                    <a href="register.html" class="btn btn-primary guest-link">Start Writing Today</a>
+                    <a href="create-blog.html" class="btn btn-primary auth-link" style="display: none;">Create a New Blog</a>
+                    <a href="#featured" class="btn btn-outline">Explore Blogs</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Blog -->
+        <section id="featured" class="section">
+            <div class="container">
+                <h2 class="mb-4">Featured Story</h2>
+                <div id="featuredBlogs">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Latest Blogs -->
+        <section id="latestSection" class="section bg-light">
+            <div class="container">
+                <h2 class="mb-4">Latest Articles</h2>
+                <div class="blog-grid" id="latestBlogs">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">BlogSphere</a>
+                <p class="footer-text mt-4">Empowering writers and readers everywhere.</p>
+            </div>
+            <div class="footer-social">
+                <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                <a href="#"><i class="fa-brands fa-github"></i></a>
+                <a href="#"><i class="fa-brands fa-linkedin"></i></a>
+            </div>
+            <p class="footer-text">&copy; 2024 BlogSphere. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>

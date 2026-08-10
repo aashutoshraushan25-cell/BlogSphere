@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BlogSphere</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fa-solid fa-feather" style="color: var(--primary-color);"></i> BlogSphere</a>
+            
+            <button class="mobile-menu-btn" aria-label="Toggle Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li class="guest-link"><a href="login.html">Login</a></li>
+                <li class="guest-link"><a href="register.html" class="btn btn-primary" style="color: white; padding: 0.5rem 1rem;">Register</a></li>
+                
+                <li class="auth-link"><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li class="auth-link"><a href="create-blog.html">Create Blog</a></li>
+                <li class="auth-link"><a href="#" id="logoutBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="section" style="padding-top: 2rem;">
+        <div class="container">
+            
+            <div class="dashboard-header">
+                <div>
+                    <h1>Welcome, <span id="dashboardUserName">User</span>!</h1>
+                    <p>Here is an overview of your writing journey.</p>
+                </div>
+                <a href="create-blog.html" class="btn btn-primary">
+                    <i class="fa-solid fa-plus" style="margin-right: 0.5rem;"></i> New Blog
+                </a>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fa-regular fa-file-lines"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statPublished">0</h3>
+                        <p>Published Posts</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-font"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statWords">0</h3>
+                        <p>Total Words Written</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fa-regular fa-id-badge"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>100%</h3>
+                        <p>Profile Completion</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard List -->
+            <h2 class="mb-4">Your Blogs</h2>
+            <div class="dashboard-list" id="dashboardList">
+                <!-- Populated by JS -->
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="margin-top: auto;">
+        <div class="container footer-content">
+            <p class="footer-text text-center w-100">&copy; 2024 BlogSphere.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>

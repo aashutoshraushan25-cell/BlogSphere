@@ -85,7 +85,27 @@ const loginUser = async (req, res) => {
   }
 };
 
+// @desc    Get user profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (user) {
+      res.status(200).json({
+        success: true,
+        data: user
+      });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
-  loginUser
+  loginUser,
+  getUserProfile
 };

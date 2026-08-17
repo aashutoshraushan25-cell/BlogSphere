@@ -26,6 +26,11 @@ function initApp() {
   } else if (path.includes('create-blog.html')) {
     requireAuth();
     setupCreateBlogForm();
+  } else if (path.includes('blog-details.html')) {
+    renderBlogDetails();
+  } else if (path.includes('profile.html')) {
+    requireAuth();
+    renderProfile();
   } else if (path.includes('login.html')) {
     redirectIfAuth();
     setupLoginForm();
@@ -140,6 +145,24 @@ function updateNavigation() {
 // BLOG API LOGIC
 // ==========================================
 
+async function fetchUserProfile() {
+  const user = getCurrentUser();
+  if (!user || !user.token) return null;
+  
+  try {
+    const res = await fetch(`${API_URL}/auth/profile`, {
+      headers: {
+        'Authorization': `Bearer ${user.token}`
+      }
+    });
+    const data = await res.json();
+    return data.success ? data.data : null;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+}
+
 async function fetchBlogs() {
   try {
     const res = await fetch(`${API_URL}/blogs`);
@@ -148,6 +171,40 @@ async function fetchBlogs() {
   } catch (error) {
     console.error('Error fetching blogs:', error);
     return [];
+  }
+}
+
+async function fetchBlog(id) {
+  try {
+    const res = await fetch(`${API_URL}/blogs/${id}`);
+    const data = await res.json();
+    return data.success ? data.data : null;
+  } catch (error) {
+    console.error('Error fetching blog:', error);
+    return null;
+  }
+}
+
+async function apiUpdateBlog(id, blogData) {
+  const user = getCurrentUser();
+  if (!user || !user.token) return false;
+  
+  try {
+    const res = await fetch(`${API_URL}/blogs/${id}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user.token}`
+      },
+      body: JSON.stringify(blogData)
+    });
+    const data = await res.json();
+    
+    if (!data.success) showToast(data.message, 'error');
+    return data.success;
+  } catch (error) {
+    showToast('Failed to update blog', 'error');
+    return false;
   }
 }
 
@@ -251,12 +308,34 @@ function setupRegisterForm() {
 }
 
 // Setup Create Blog Form
-function setupCreateBlogForm() {
+async function setupCreateBlogForm() {
   const form = document.getElementById('createBlogForm');
   const contentInput = document.getElementById('content');
   const charCounter = document.getElementById('charCounter');
+  const formTitle = document.querySelector('.auth-container h2');
+  const submitBtn = document.querySelector('#createBlogForm button[type="submit"]');
   
   if (!form) return;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get('edit');
+  
+  if (editId) {
+    if (formTitle) formTitle.textContent = 'Edit Blog';
+    if (submitBtn) submitBtn.textContent = 'Update Blog';
+    
+    const blog = await fetchBlog(editId);
+    if (blog) {
+      document.getElementById('title').value = blog.title;
+      document.getElementById('category').value = blog.category;
+      contentInput.value = blog.content;
+      if (document.getElementById('image') && blog.image) {
+        document.getElementById('image').value = blog.image;
+      }
+      const wordCount = blog.content.trim() === '' ? 0 : blog.content.trim().split(/\s+/).length;
+      charCounter.textContent = `${wordCount} words | ${blog.content.length} characters`;
+    }
+  }
   
   contentInput.addEventListener('input', () => {
     const text = contentInput.value;
@@ -278,9 +357,15 @@ function setupCreateBlogForm() {
       return;
     }
     
-    const success = await apiCreateBlog({ title, category, content, image });
+    let success;
+    if (editId) {
+      success = await apiUpdateBlog(editId, { title, category, content, image });
+    } else {
+      success = await apiCreateBlog({ title, category, content, image });
+    }
+    
     if (success) {
-      showToast('Blog published successfully!', 'success');
+      showToast(editId ? 'Blog updated successfully!' : 'Blog published successfully!', 'success');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
       }, 1000);
@@ -319,7 +404,12 @@ async function renderDashboard() {
   if (userNameEl) userNameEl.textContent = user.name;
   
   const allBlogs = await fetchBlogs();
-  const userBlogs = allBlogs.filter(b => b.authorEmail === user.email);
+  const userBlogs = allBlogs.filter(b => {
+    if (b.author && typeof b.author === 'object') {
+      return b.author._id === user._id || b.author.email === user.email;
+    }
+    return false;
+  });
   
   const statPublished = document.getElementById('statPublished');
   const statWords = document.getElementById('statWords');
@@ -366,6 +456,38 @@ async function renderDashboard() {
   `).join('');
 }
 
+// Render Profile Data
+async function renderProfile() {
+  const user = getCurrentUser();
+  const profile = await fetchUserProfile();
+  
+  document.getElementById('profileLoading').style.display = 'none';
+  
+  if (!profile) {
+    showToast('Failed to load profile', 'error');
+    return;
+  }
+  
+  document.getElementById('profileContent').style.display = 'block';
+  document.getElementById('profileInitials').textContent = profile.name.charAt(0).toUpperCase();
+  document.getElementById('profileName').textContent = profile.name;
+  document.getElementById('profileEmail').textContent = profile.email;
+  
+  // Format Member Since
+  document.getElementById('profileMemberSince').textContent = formatDate(profile.createdAt);
+  
+  // Calculate Total Blogs
+  const allBlogs = await fetchBlogs();
+  const userBlogs = allBlogs.filter(b => {
+    if (b.author && typeof b.author === 'object') {
+      return b.author._id === user._id || b.author.email === user.email;
+    }
+    return false;
+  });
+  
+  document.getElementById('profileTotalBlogs').textContent = userBlogs.length;
+}
+
 // Delete Blog
 window.deleteBlog = async function(id) {
   if (confirm('Are you sure you want to delete this blog post?')) {
@@ -378,7 +500,7 @@ window.deleteBlog = async function(id) {
 };
 
 window.editBlog = function(id) {
-  showToast('Edit feature coming soon!', 'success');
+  window.location.href = `create-blog.html?edit=${id}`;
 };
 
 // ==========================================
@@ -386,7 +508,8 @@ window.editBlog = function(id) {
 // ==========================================
 
 function createBlogCardHTML(blog) {
-  const initial = blog.author.charAt(0).toUpperCase();
+  const authorName = blog.author && typeof blog.author === 'object' ? blog.author.name : (blog.author || 'Unknown');
+  const initial = authorName.charAt(0).toUpperCase();
   const catName = blog.category.replace('-', ' ');
   
   let imgUrl = blog.image;
@@ -408,20 +531,59 @@ function createBlogCardHTML(blog) {
       </div>
       <div class="blog-card-content">
         <span class="blog-category">${catName}</span>
-        <h3 class="blog-title"><a href="#">${blog.title}</a></h3>
-        <p class="blog-excerpt">${blog.content}</p>
+        <h3 class="blog-title"><a href="blog-details.html?id=${blog._id}">${blog.title}</a></h3>
+        <p class="blog-excerpt">${blog.content.substring(0, 120)}...</p>
         <div class="blog-meta">
           <div class="blog-author">
             <div class="author-avatar">${initial}</div>
-            <span>${blog.author}</span>
+            <span>${authorName}</span>
           </div>
           <div>
             <span>${formatDate(blog.createdAt)}</span> • <span>${blog.readTime} min read</span>
           </div>
         </div>
+        <a href="blog-details.html?id=${blog._id}" class="btn btn-outline" style="margin-top: 1rem; display: inline-block;">Read More</a>
       </div>
     </div>
   `;
+}
+
+async function renderBlogDetails() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const blogId = urlParams.get('id');
+  
+  if (!blogId) {
+    document.getElementById('blogDetailsLoading').style.display = 'none';
+    document.getElementById('blogDetailsError').style.display = 'block';
+    return;
+  }
+
+  const blog = await fetchBlog(blogId);
+  
+  document.getElementById('blogDetailsLoading').style.display = 'none';
+  
+  if (!blog) {
+    document.getElementById('blogDetailsError').style.display = 'block';
+    return;
+  }
+
+  const authorName = blog.author && typeof blog.author === 'object' ? blog.author.name : (blog.author || 'Unknown');
+  
+  document.getElementById('blogDetailsContent').style.display = 'block';
+  document.getElementById('detailCategory').textContent = blog.category.replace('-', ' ');
+  document.getElementById('detailTitle').textContent = blog.title;
+  document.getElementById('detailAuthor').innerHTML = `<i class="fa-solid fa-user"></i> ${authorName}`;
+  document.getElementById('detailDate').innerHTML = `<i class="fa-solid fa-calendar"></i> ${formatDate(blog.createdAt)}`;
+  document.getElementById('detailReadTime').innerHTML = `<i class="fa-solid fa-clock"></i> ${blog.readTime} min read`;
+  
+  if (blog.image) {
+    document.getElementById('detailImage').src = blog.image;
+    document.getElementById('detailImage').style.display = 'block';
+  } else {
+    document.getElementById('detailImage').style.display = 'none';
+  }
+  
+  document.getElementById('detailContent').textContent = blog.content;
 }
 
 function formatDate(isoString) {

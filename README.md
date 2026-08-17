@@ -1,8 +1,8 @@
 # BlogSphere – Full Stack Blog Application
 
-## Module 2 – Backend Development
+## Module 3 – Database Integration
 
-BlogSphere has been upgraded from a frontend-only prototype to a full-stack application. It now features a Node.js + Express backend connected to a MongoDB database, with secure JWT authentication.
+BlogSphere has now completed its Module 3 Database Integration, fully integrating the Node.js + Express backend with a persistent MongoDB database using Mongoose. The frontend dynamically fetches, creates, updates, and deletes data securely using JWT authentication.
 
 ### Technologies
 
@@ -15,13 +15,13 @@ BlogSphere has been upgraded from a frontend-only prototype to a full-stack appl
 
 ### Features
 
-- User registration with password hashing.
+- User registration with password hashing (bcryptjs).
 - User login with JWT generation.
 - Protected routes requiring JWT authentication.
-- Create new blog (requires auth).
-- Read all blogs and individual blogs.
-- Update blog (owner only).
-- Delete blog (owner only).
+- Create new blog (requires auth) mapped to authenticated user using MongoDB ObjectIds.
+- Read all blogs and individual blogs on dynamic details pages.
+- Update blog (owner only verification).
+- Delete blog (owner only verification).
 - Seamless frontend-backend integration using `fetch` API.
 
 ### Project Structure
@@ -34,6 +34,7 @@ BlogSphere/
 │   ├── register.html
 │   ├── dashboard.html
 │   ├── create-blog.html
+│   ├── blog-details.html
 │   ├── css/
 │   └── js/
 │
@@ -123,4 +124,4 @@ BlogSphere/
 
 ---
 
-*Built with ❤️ for Web Development Internship - Module 2.*
+*Built with ❤️ for Web Development Internship - Module 3.*

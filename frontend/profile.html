@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - BlogSphere</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .profile-container {
+            max-width: 600px;
+            margin: 3rem auto;
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem auto;
+        }
+        .profile-name {
+            font-size: 2rem;
+            color: var(--heading-color);
+            margin-bottom: 0.5rem;
+        }
+        .profile-email {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+        .profile-stats {
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fa-solid fa-feather" style="color: var(--primary-color);"></i> BlogSphere</a>
+            
+            <button class="mobile-menu-btn" aria-label="Toggle Menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li class="guest-link"><a href="login.html">Login</a></li>
+                <li class="guest-link"><a href="register.html" class="btn btn-primary" style="color: white; padding: 0.5rem 1rem;">Register</a></li>
+                
+                <li class="auth-link" style="display: none;"><a href="dashboard.html">Dashboard</a></li>
+                <li class="auth-link" style="display: none;"><a href="create-blog.html">Create Blog</a></li>
+                <li class="auth-link" style="display: none;"><a href="profile.html" class="active">Profile</a></li>
+                <li class="auth-link" style="display: none;"><a href="#" id="logoutBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div id="profileLoading" class="text-center" style="padding: 4rem 0;">
+                <i class="fa-solid fa-spinner fa-spin fa-3x" style="color: var(--primary-color);"></i>
+                <p class="mt-4">Loading profile...</p>
+            </div>
+
+            <div id="profileContent" class="profile-container" style="display: none;">
+                <div class="profile-avatar" id="profileInitials">U</div>
+                <h1 class="profile-name" id="profileName">User Name</h1>
+                <p class="profile-email" id="profileEmail">user@example.com</p>
+                
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="profileTotalBlogs">0</span>
+                        <span class="stat-label">Total Blogs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="profileMemberSince">-</span>
+                        <span class="stat-label">Member Since</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <a href="index.html" class="logo">BlogSphere</a>
+                <p class="footer-text mt-4">Empowering writers and readers everywhere.</p>
+            </div>
+            <p class="footer-text">&copy; 2024 BlogSphere. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>

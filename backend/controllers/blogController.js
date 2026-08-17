@@ -5,7 +5,7 @@ const Blog = require('../models/Blog');
 // @access  Public
 const getBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find().sort({ createdAt: -1 }); // Newest first
+    const blogs = await Blog.find().populate('author', 'name email').sort({ createdAt: -1 }); // Newest first
     res.status(200).json({ success: true, count: blogs.length, data: blogs });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -17,7 +17,7 @@ const getBlogs = async (req, res) => {
 // @access  Public
 const getBlog = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id);
+    const blog = await Blog.findById(req.params.id).populate('author', 'name email');
     if (!blog) {
       return res.status(404).json({ success: false, message: 'Blog not found' });
     }
@@ -43,8 +43,7 @@ const createBlog = async (req, res) => {
       category,
       content,
       image,
-      author: req.user.name,
-      authorEmail: req.user.email,
+      author: req.user._id,
       readTime: Math.max(1, Math.ceil(content.split(/\s+/).length / 200))
     });
 
@@ -66,7 +65,7 @@ const updateBlog = async (req, res) => {
     }
 
     // Make sure user owns the blog
-    if (blog.authorEmail !== req.user.email) {
+    if (blog.author.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized to update this blog' });
     }
 
@@ -93,7 +92,7 @@ const deleteBlog = async (req, res) => {
     }
 
     // Make sure user owns the blog
-    if (blog.authorEmail !== req.user.email) {
+    if (blog.author.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this blog' });
     }
 

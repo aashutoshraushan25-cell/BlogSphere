@@ -1,57 +1,126 @@
-# BlogSphere
+# BlogSphere – Full Stack Blog Application
 
-## Project Description
+## Module 2 – Backend Development
 
-BlogSphere is a modern, responsive, and fully-featured frontend blog application built for developers, writers, and tech enthusiasts. It allows users to read blogs, register an account, log in, create new blogs, and manage their posts through a personal dashboard.
+BlogSphere has been upgraded from a frontend-only prototype to a full-stack application. It now features a Node.js + Express backend connected to a MongoDB database, with secure JWT authentication.
 
-This project was built entirely on the frontend using HTML5, CSS3, and Vanilla JavaScript, relying on `localStorage` to simulate a backend database for users and blog posts.
+### Technologies
 
-## Internship Project Objective
+- **Node.js** & **Express.js**: Backend server and RESTful API framework.
+- **MongoDB** & **Mongoose**: NoSQL database and object data modeling.
+- **JWT (JSON Web Tokens)**: Secure stateless authentication.
+- **bcryptjs**: Password hashing.
+- **REST API**: Standardized endpoints for client-server communication.
+- **HTML5, CSS3, Vanilla JS**: Frontend UI.
 
-This project serves as a comprehensive module for a Full Stack Web Development internship. It demonstrates proficiency in core frontend technologies, responsive web design principles, client-side data management, DOM manipulation, form validation, and modern UI/UX design. The codebase is clean, well-structured, and beginner-friendly.
+### Features
 
-## Features
+- User registration with password hashing.
+- User login with JWT generation.
+- Protected routes requiring JWT authentication.
+- Create new blog (requires auth).
+- Read all blogs and individual blogs.
+- Update blog (owner only).
+- Delete blog (owner only).
+- Seamless frontend-backend integration using `fetch` API.
 
-- **Responsive Design**: Looks great on mobile, tablet, and desktop devices.
-- **Authentication**: User registration and login flows with client-side form validation.
-- **Dynamic Content**: Blogs are generated and displayed dynamically using JavaScript.
-- **Dashboard**: A personalized space for users to see stats and manage their published blogs.
-- **Create Blog**: A clean editor to write posts with a live word and character counter.
-- **Local Data Persistence**: All users and blogs are stored in the browser's `localStorage` ensuring data is preserved across sessions without a database.
-- **Modern UI**: Uses CSS variables, clean typography (Inter font), FontAwesome icons, gradient accents, and subtle shadows for a premium look and feel.
-
-## Technologies Used
-
-- **HTML5**: Semantic markup for structure.
-- **CSS3**: Vanilla CSS for styling, Flexbox, CSS Grid, media queries, and animations.
-- **JavaScript (ES6+)**: Core logic, DOM manipulation, and `localStorage` integration.
-- **Font Awesome**: Icon library via CDN.
-- **Google Fonts**: Custom typography (Inter).
-
-## Folder Structure
+### Project Structure
 
 ```text
 BlogSphere/
-├── index.html           # Home page showing featured and latest blogs
-├── login.html           # User login page
-├── register.html        # User registration page
-├── dashboard.html       # Protected dashboard to manage blogs and view stats
-├── create-blog.html     # Protected form page to publish new blogs
-├── css/
-│   └── style.css        # Main stylesheet handling global styles and components
-├── js/
-│   └── app.js           # Core application logic, routing simulation, and data management
-└── README.md            # Project documentation
+├── frontend/
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── dashboard.html
+│   ├── create-blog.html
+│   ├── css/
+│   └── js/
+│
+├── backend/
+│   ├── server.js
+│   ├── package.json
+│   ├── .env.example
+│   ├── config/
+│   │   └── db.js
+│   ├── models/
+│   │   ├── User.js
+│   │   └── Blog.js
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   └── blogRoutes.js
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   └── blogController.js
+│   └── middleware/
+│       └── authMiddleware.js
+│
+└── README.md
 ```
 
-## How to Run the Project
+### Installation & Setup
 
-1. Clone or download this repository to your local machine.
-2. Navigate to the `BlogSphere` directory.
-3. Open the `index.html` file in any modern web browser.
-   - Alternatively, use a local server like VS Code's "Live Server" extension for a better experience.
-4. The application will automatically seed a few sample blogs so the home page isn't empty.
-5. Try registering a new user, logging in, creating a blog, and deleting it from the dashboard!
+1. **Clone the repository** (or download it).
+2. **Navigate to the backend directory**:
+
+   ```bash
+   cd backend
+   ```
+
+3. **Install dependencies**:
+
+   ```bash
+   npm install
+   ```
+
+4. **Environment Variables**:
+   Create a `.env` file in the `backend` folder based on `.env.example`:
+
+   ```env
+   PORT=5000
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_secret_key
+   ```
+
+   *(For local testing, you can use `mongodb://127.0.0.1:27017/blogsphere` if you have MongoDB installed locally).*
+
+5. **Start the backend server**:
+
+   ```bash
+   npm start
+   # or
+   npm run dev
+   ```
+
+   The server will start on `http://localhost:5000`.
+
+6. **Start the Frontend**:
+   Serve the `frontend/` directory using a local web server (e.g., VS Code's "Live Server" extension).
+   Access the frontend via your browser. It is pre-configured to communicate with `http://localhost:5000/api`.
+
+### API Documentation
+
+#### Authentication Routes (`/api/auth`)
+
+| Endpoint    | Method | Description                   | Auth Required | Request Body                |
+| ----------- | ------ | ----------------------------- | ------------- | --------------------------- |
+| `/register` | POST   | Register a new user           | No            | `{ name, email, password }` |
+| `/login`    | POST   | Authenticate user & get token | No            | `{ email, password }`       |
+
+#### Blog Routes (`/api/blogs`)
+
+| Endpoint | Method | Description             | Auth Required | Request Body                          |
+| -------- | ------ | ----------------------- | ------------- | ------------------------------------- |
+| `/`      | GET    | Get all blogs           | No            | None                                  |
+| `/:id`   | GET    | Get a single blog by ID | No            | None                                  |
+| `/`      | POST   | Create a new blog       | Yes           | `{ title, category, content, image }` |
+| `/:id`   | PUT    | Update a blog           | Yes (Owner)   | `{ title, category, content, image }` |
+| `/:id`   | DELETE | Delete a blog           | Yes (Owner)   | None                                  |
+
+*Note: Protected routes require a valid JWT in the request header:*
+
+`Authorization: Bearer <token>`
 
 ---
-*Built with ❤️ for Web Development Internship.*
+
+*Built with ❤️ for Web Development Internship - Module 2.*

@@ -23,7 +23,7 @@ function initApp() {
   } else if (path.includes('dashboard.html')) {
     requireAuth();
     renderDashboard();
-  } else if (path.includes('create-blog.html')) {
+  } else if (path.includes('create-blog.html') || path.includes('edit-blog.html')) {
     requireAuth();
     setupCreateBlogForm();
   } else if (path.includes('blog-details.html')) {
@@ -325,10 +325,10 @@ async function setupCreateBlogForm() {
   if (!form) return;
   
   const urlParams = new URLSearchParams(window.location.search);
-  const editId = urlParams.get('edit');
+  const editId = urlParams.get('edit') || urlParams.get('id');
   
   if (editId) {
-    if (formTitle) formTitle.textContent = 'Edit Blog';
+    if (formTitle) formTitle.textContent = 'Edit Blog Post';
     if (submitBtn) submitBtn.textContent = 'Update Blog';
     
     const blog = await fetchBlog(editId);
@@ -364,11 +364,23 @@ async function setupCreateBlogForm() {
       return;
     }
     
+    // Disable submit button & show loading state
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Submit';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+    }
+    
     let success;
     if (editId) {
       success = await apiUpdateBlog(editId, { title, category, content, image });
     } else {
       success = await apiCreateBlog({ title, category, content, image });
+    }
+    
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnText;
     }
     
     if (success) {
@@ -598,7 +610,7 @@ window.deleteBlog = async function(id) {
 };
 
 window.editBlog = function(id) {
-  window.location.href = `create-blog.html?edit=${id}`;
+  window.location.href = `edit-blog.html?id=${id}`;
 };
 
 // ==========================================

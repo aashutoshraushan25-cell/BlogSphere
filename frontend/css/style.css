@@ -32,6 +32,14 @@
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
+
+  /* Theme Aliases */
+  --card-bg: var(--surface-color);
+  --border-radius: var(--radius-lg);
+  --shadow: var(--shadow-md);
+  --heading-color: var(--text-primary);
+  --text-color: var(--text-primary);
+  --text-muted: var(--text-secondary);
 }
 
 /* Reset & Base Styles */

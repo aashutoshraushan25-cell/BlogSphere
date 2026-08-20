@@ -59,6 +59,9 @@ const getBlog = async (req, res) => {
     }
     res.status(200).json({ success: true, data: blog });
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(404).json({ success: false, message: 'Blog not found' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -112,6 +115,9 @@ const updateBlog = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Blog updated', data: blog });
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(404).json({ success: false, message: 'Blog not found' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -135,6 +141,9 @@ const deleteBlog = async (req, res) => {
     await blog.deleteOne();
     res.status(200).json({ success: true, message: 'Blog deleted successfully' });
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(404).json({ success: false, message: 'Blog not found' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };

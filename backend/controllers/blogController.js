@@ -5,8 +5,44 @@ const Blog = require('../models/Blog');
 // @access  Public
 const getBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find().populate('author', 'name email').sort({ createdAt: -1 }); // Newest first
-    res.status(200).json({ success: true, count: blogs.length, data: blogs });
+    const { search, category, author, page = 1, limit = 10 } = req.query;
+    let query = {};
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (category) {
+      query.category = category;
+    }
+    
+    if (author) {
+      query.author = author;
+    }
+    
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const startIndex = (pageNum - 1) * limitNum;
+    
+    const total = await Blog.countDocuments(query);
+    
+    const blogs = await Blog.find(query)
+      .populate('author', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(startIndex)
+      .limit(limitNum);
+      
+    const pagination = {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum)
+    };
+
+    res.status(200).json({ success: true, count: blogs.length, data: blogs, pagination });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

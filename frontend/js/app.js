@@ -163,14 +163,21 @@ async function fetchUserProfile() {
   }
 }
 
-async function fetchBlogs() {
+async function fetchBlogs(options = {}) {
   try {
-    const res = await fetch(`${API_URL}/blogs`);
+    const queryParams = new URLSearchParams();
+    if (options.search) queryParams.append('search', options.search);
+    if (options.category) queryParams.append('category', options.category);
+    if (options.page) queryParams.append('page', options.page);
+    if (options.limit) queryParams.append('limit', options.limit);
+    if (options.author) queryParams.append('author', options.author);
+
+    const res = await fetch(`${API_URL}/blogs?${queryParams.toString()}`);
     const data = await res.json();
-    return data.success ? data.data : [];
+    return data.success ? data : { data: [], pagination: null };
   } catch (error) {
     console.error('Error fetching blogs:', error);
-    return [];
+    return { data: [], pagination: null };
   }
 }
 
@@ -373,29 +380,130 @@ async function setupCreateBlogForm() {
   });
 }
 
+// Globals for Pagination and Filters
+let currentPage = 1;
+let currentSearch = '';
+let currentCategory = '';
+
 // Render Blogs on Home Page
 async function renderHomeBlogs() {
   const featuredContainer = document.getElementById('featuredBlogs');
   const latestContainer = document.getElementById('latestBlogs');
+  const paginationContainer = document.getElementById('paginationContainer');
+  const pageInfo = document.getElementById('pageInfo');
+  
   if (!featuredContainer || !latestContainer) return;
   
-  const blogs = await fetchBlogs();
+  const response = await fetchBlogs({ search: currentSearch, category: currentCategory, page: currentPage, limit: 10 });
+  const blogs = response.data || [];
+  const pagination = response.pagination;
   
   if (blogs.length === 0) {
-    latestContainer.innerHTML = '<p class="text-center w-100">No blogs published yet.</p>';
+    if (currentPage === 1 && !currentSearch && !currentCategory) {
+      latestContainer.innerHTML = '<p class="text-center w-100">No blogs published yet.</p>';
+      featuredContainer.innerHTML = '<p class="text-center w-100">No featured blogs.</p>';
+    } else {
+      latestContainer.innerHTML = '<p class="text-center w-100">No blogs found matching your criteria.</p>';
+      if (currentPage === 1) featuredContainer.innerHTML = '<p class="text-center w-100">No featured blogs.</p>';
+    }
+    if (paginationContainer) paginationContainer.style.display = 'none';
     return;
   }
   
-  const featured = blogs[0];
-  featuredContainer.innerHTML = createBlogCardHTML(featured);
-  
-  const latest = blogs.slice(1, 4);
-  if (latest.length > 0) {
-    latestContainer.innerHTML = latest.map(blog => createBlogCardHTML(blog)).join('');
+  // Render Featured Blog only on page 1 without search
+  if (currentPage === 1 && !currentSearch && !currentCategory && blogs.length > 0) {
+    const featured = blogs[0];
+    featuredContainer.innerHTML = createBlogCardHTML(featured);
+    
+    const latest = blogs.slice(1);
+    if (latest.length > 0) {
+      latestContainer.innerHTML = latest.map(blog => createBlogCardHTML(blog)).join('');
+      document.getElementById('latestSection').style.display = 'block';
+    } else {
+      latestContainer.innerHTML = '';
+      if (!currentSearch && !currentCategory) {
+        document.getElementById('latestSection').style.display = 'none';
+      }
+    }
   } else {
-    document.getElementById('latestSection').style.display = 'none';
+    // Hide featured section when paginating or searching
+    if (document.getElementById('featured')) {
+      document.getElementById('featured').style.display = 'none';
+    }
+    latestContainer.innerHTML = blogs.map(blog => createBlogCardHTML(blog)).join('');
+    document.getElementById('latestSection').style.display = 'block';
+  }
+  
+  // Setup Pagination
+  if (pagination && pagination.totalPages > 1) {
+    if (paginationContainer) paginationContainer.style.display = 'flex';
+    if (pageInfo) pageInfo.textContent = `Page ${pagination.page} of ${pagination.totalPages}`;
+    
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    
+    if (prevBtn) {
+      prevBtn.disabled = pagination.page === 1;
+      prevBtn.onclick = () => {
+        if (pagination.page > 1) {
+          currentPage--;
+          renderHomeBlogs();
+          document.getElementById('latestSection').scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+    }
+    
+    if (nextBtn) {
+      nextBtn.disabled = pagination.page === pagination.totalPages;
+      nextBtn.onclick = () => {
+        if (pagination.page < pagination.totalPages) {
+          currentPage++;
+          renderHomeBlogs();
+          document.getElementById('latestSection').scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+    }
+  } else {
+    if (paginationContainer) paginationContainer.style.display = 'none';
   }
 }
+
+// Setup Filters and Search Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  const searchBtn = document.getElementById('searchBtn');
+  const searchInput = document.getElementById('searchInput');
+  
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener('click', () => {
+      currentSearch = searchInput.value.trim();
+      currentPage = 1;
+      renderHomeBlogs();
+    });
+    
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        currentSearch = searchInput.value.trim();
+        currentPage = 1;
+        renderHomeBlogs();
+      }
+    });
+  }
+  
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  if (filterBtns.length > 0) {
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Update active class
+        filterBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        currentCategory = e.target.getAttribute('data-category');
+        currentPage = 1;
+        renderHomeBlogs();
+      });
+    });
+  }
+});
 
 // Render Dashboard Data
 async function renderDashboard() {
@@ -403,13 +511,8 @@ async function renderDashboard() {
   const userNameEl = document.getElementById('dashboardUserName');
   if (userNameEl) userNameEl.textContent = user.name;
   
-  const allBlogs = await fetchBlogs();
-  const userBlogs = allBlogs.filter(b => {
-    if (b.author && typeof b.author === 'object') {
-      return b.author._id === user._id || b.author.email === user.email;
-    }
-    return false;
-  });
+  const response = await fetchBlogs({ limit: 1000, author: user._id });
+  const userBlogs = response.data || [];
   
   const statPublished = document.getElementById('statPublished');
   const statWords = document.getElementById('statWords');
@@ -477,13 +580,8 @@ async function renderProfile() {
   document.getElementById('profileMemberSince').textContent = formatDate(profile.createdAt);
   
   // Calculate Total Blogs
-  const allBlogs = await fetchBlogs();
-  const userBlogs = allBlogs.filter(b => {
-    if (b.author && typeof b.author === 'object') {
-      return b.author._id === user._id || b.author.email === user.email;
-    }
-    return false;
-  });
+  const response = await fetchBlogs({ limit: 1000, author: user._id });
+  const userBlogs = response.data || [];
   
   document.getElementById('profileTotalBlogs').textContent = userBlogs.length;
 }

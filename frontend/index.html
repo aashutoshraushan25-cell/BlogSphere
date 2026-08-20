@@ -61,9 +61,31 @@
         <!-- Latest Blogs -->
         <section id="latestSection" class="section bg-light">
             <div class="container">
-                <h2 class="mb-4">Latest Articles</h2>
+                <div class="blog-filters">
+                    <div class="search-bar">
+                        <input type="text" id="searchInput" placeholder="Search blogs by title or content...">
+                        <button id="searchBtn" class="btn btn-primary" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                    <div class="category-filters" id="categoryFilters">
+                        <button class="filter-btn active" data-category="">All</button>
+                        <button class="filter-btn" data-category="web-development">Web Dev</button>
+                        <button class="filter-btn" data-category="mobile-apps">Mobile Apps</button>
+                        <button class="filter-btn" data-category="artificial-intelligence">AI</button>
+                        <button class="filter-btn" data-category="education">Education</button>
+                        <button class="filter-btn" data-category="career">Career</button>
+                    </div>
+                </div>
+
+                <h2 class="mb-4" style="margin-top: 2rem;">Latest Articles</h2>
                 <div class="blog-grid" id="latestBlogs">
                     <!-- Populated by JS -->
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="pagination-container" id="paginationContainer" style="display: none; margin-top: 3rem; text-align: center; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+                    <button class="btn btn-outline" id="prevPageBtn"><i class="fa-solid fa-chevron-left"></i> Previous</button>
+                    <span id="pageInfo" style="font-weight: 500;">Page 1 of 1</span>
+                    <button class="btn btn-outline" id="nextPageBtn">Next <i class="fa-solid fa-chevron-right"></i></button>
                 </div>
             </div>
         </section>

@@ -1,8 +1,8 @@
 # BlogSphere – Full Stack Blog Application
 
-## Module 3 – Database Integration
+## Module 4 – CRUD Operations
 
-BlogSphere has now completed its Module 3 Database Integration, fully integrating the Node.js + Express backend with a persistent MongoDB database using Mongoose. The frontend dynamically fetches, creates, updates, and deletes data securely using JWT authentication.
+BlogSphere has now completed its Module 4 CRUD Operations, fully integrating the Node.js + Express backend with a persistent MongoDB database using Mongoose. The frontend dynamically fetches, creates, updates, and deletes data securely using JWT authentication. It also features Search, Category Filtering, and Pagination.
 
 ### Technologies
 
@@ -22,6 +22,9 @@ BlogSphere has now completed its Module 3 Database Integration, fully integratin
 - Read all blogs and individual blogs on dynamic details pages.
 - Update blog (owner only verification).
 - Delete blog (owner only verification).
+- Search blogs by title and content.
+- Filter blogs by categories.
+- Pagination for blogs grid.
 - Seamless frontend-backend integration using `fetch` API.
 
 ### Project Structure
@@ -112,7 +115,7 @@ BlogSphere/
 
 | Endpoint | Method | Description             | Auth Required | Request Body                          |
 | -------- | ------ | ----------------------- | ------------- | ------------------------------------- |
-| `/`      | GET    | Get all blogs           | No            | None                                  |
+| `/`      | GET    | Get all blogs (supports `?search`, `?category`, `?page`, `?limit`) | No | None |
 | `/:id`   | GET    | Get a single blog by ID | No            | None                                  |
 | `/`      | POST   | Create a new blog       | Yes           | `{ title, category, content, image }` |
 | `/:id`   | PUT    | Update a blog           | Yes (Owner)   | `{ title, category, content, image }` |
@@ -124,4 +127,4 @@ BlogSphere/
 
 ---
 
-*Built with ❤️ for Web Development Internship - Module 3.*
+*Built with ❤️ for Web Development Internship - Module 4.*

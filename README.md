@@ -1,31 +1,53 @@
 # BlogSphere – Full Stack Blog Application
 
-## Module 4 – CRUD Operations
+## Module 5 – Authentication & Dashboard
 
-BlogSphere has now completed its Module 4 CRUD Operations, fully integrating the Node.js + Express backend with a persistent MongoDB database using Mongoose. The frontend dynamically fetches, creates, updates, and deletes data securely using JWT authentication. It also features Search, Category Filtering, and Pagination.
+BlogSphere has been upgraded to **Module 5: Authentication & Dashboard**. The application provides a complete, secure JWT-based session architecture, route-level protection, server-side resource ownership checks, and a personalized user dashboard with live blogging statistics.
 
-### Technologies
+---
 
-- **Node.js** & **Express.js**: Backend server and RESTful API framework.
-- **MongoDB** & **Mongoose**: NoSQL database and object data modeling.
-- **JWT (JSON Web Tokens)**: Secure stateless authentication.
-- **bcryptjs**: Password hashing.
-- **REST API**: Standardized endpoints for client-server communication.
-- **HTML5, CSS3, Vanilla JS**: Frontend UI.
+### Key Highlights & Features
 
-### Features
+1. **Secure JWT Authentication & Password Hashing**
+   - User registration with input validation and duplicate email protection.
+   - Secure password hashing using `bcryptjs` (salt rounds: 10).
+   - Stateless JWT generation (`jsonwebtoken`) with configurable expiration and user ID payload.
+   - User passwords are strictly excluded from all API responses (`.select('-password')`).
 
-- User registration with password hashing (bcryptjs).
-- User login with JWT generation.
-- Protected routes requiring JWT authentication.
-- Create new blog (requires auth) mapped to authenticated user using MongoDB ObjectIds.
-- Read all blogs and individual blogs on dynamic details pages.
-- Update blog (owner only verification).
-- Delete blog (owner only verification).
-- Search blogs by title and content.
-- Filter blogs by categories.
-- Pagination for blogs grid.
-- Seamless frontend-backend integration using `fetch` API.
+2. **Authentication Middleware (`middleware/authMiddleware.js`)**
+   - Extracts and validates `Authorization: Bearer <token>` headers.
+   - Attaches verified user details to `req.user`.
+   - Rejects unauthenticated, invalid, or expired tokens with standard `HTTP 401 Unauthorized`.
+   - Protects against user ID spoofing by determining identity solely from verified tokens.
+
+3. **Protected Routes & Resource Ownership (`middleware/authMiddleware.js`, `controllers/blogController.js`)**
+   - **Public Routes**: `GET /api/blogs`, `GET /api/blogs/:id`.
+   - **Protected Routes**: `POST /api/blogs`, `PUT /api/blogs/:id`, `DELETE /api/blogs/:id`, `GET /api/blogs/my`, `GET /api/auth/me`.
+   - **Ownership Security**: `PUT` and `DELETE` endpoints verify that `blog.author === req.user.id`. Unauthorized access attempts are rejected with `HTTP 403 Forbidden`.
+
+4. **User-Specific Dashboard (`GET /api/blogs/my`, `dashboard.html`)**
+   - Protected client-side view displaying only the logged-in user's private blogs.
+   - Welcome banner featuring the authenticated user's name.
+   - **Writing Analytics**:
+     - Total published posts count.
+     - Total words written calculation.
+     - Profile completion status.
+   - Direct action controls: **View**, **Edit**, and **Delete** for each authored post.
+   - Empty-state UI prompting creation of the user's first post.
+
+5. **User Profile (`profile.html`, `GET /api/auth/me`)**
+   - Dedicated user profile displaying account credentials (name, email), member since date, and total blog count.
+   - Direct session termination via the **Logout** button.
+
+6. **Frontend Session Management & Interceptors (`frontend/js/auth.js`)**
+   - Centralized authentication storage in `localStorage` storing JWT and non-sensitive user data.
+   - Dynamic navbar reflecting state:
+     - **Logged Out**: Home, Login, Register
+     - **Logged In**: Home, Dashboard, Create Blog, Profile, Logout
+   - Seamless `401 Unauthorized` interceptor that clears expired sessions and redirects users to `login.html` with friendly notifications.
+   - Route guards preventing unauthenticated access to `/dashboard.html`, `/create-blog.html`, `/edit-blog.html`, and `/profile.html`.
+
+---
 
 ### Project Structure
 
@@ -37,14 +59,21 @@ BlogSphere/
 │   ├── register.html
 │   ├── dashboard.html
 │   ├── create-blog.html
+│   ├── edit-blog.html
 │   ├── blog-details.html
+│   ├── profile.html
 │   ├── css/
+│   │   └── style.css
 │   └── js/
+│       ├── app.js
+│       └── auth.js
 │
 ├── backend/
 │   ├── server.js
 │   ├── package.json
 │   ├── .env.example
+│   ├── test_module5.js
+│   ├── test_frontend_simulation.js
 │   ├── config/
 │   │   └── db.js
 │   ├── models/
@@ -59,72 +88,93 @@ BlogSphere/
 │   └── middleware/
 │       └── authMiddleware.js
 │
+├── .gitignore
 └── README.md
 ```
 
+---
+
 ### Installation & Setup
 
-1. **Clone the repository** (or download it).
-2. **Navigate to the backend directory**:
+#### 1. Prerequisites
+- **Node.js** (v16+ recommended)
+- **MongoDB** (Local instance running at `mongodb://127.0.0.1:27017` or a MongoDB Atlas URI)
 
-   ```bash
-   cd backend
-   ```
+#### 2. Install Backend Dependencies
+```bash
+cd backend
+npm install
+```
 
-3. **Install dependencies**:
+#### 3. Configure Environment Variables
+Create a `.env` file in the `backend/` directory based on `.env.example`:
 
-   ```bash
-   npm install
-   ```
+```env
+PORT=5000
+MONGODB_URI=mongodb://127.0.0.1:27017/blogsphere
+JWT_SECRET=your_secure_jwt_secret_key_here
+```
 
-4. **Environment Variables**:
-   Create a `.env` file in the `backend` folder based on `.env.example`:
+#### 4. Run the Backend Server
+```bash
+# Production mode
+npm start
 
-   ```env
-   PORT=5000
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_secret_key
-   ```
+# Development mode
+npm run dev
+```
+The server will start on `http://localhost:5000` and automatically serve both the API and the static frontend.
 
-   *(For local testing, you can use `mongodb://127.0.0.1:27017/blogsphere` if you have MongoDB installed locally).*
-
-5. **Start the backend server**:
-
-   ```bash
-   npm start
-   # or
-   npm run dev
-   ```
-
-   The server will start on `http://localhost:5000`.
-
-6. **Start the Frontend**:
-   Serve the `frontend/` directory using a local web server (e.g., VS Code's "Live Server" extension).
-   Access the frontend via your browser. It is pre-configured to communicate with `http://localhost:5000/api`.
-
-### API Documentation
-
-#### Authentication Routes (`/api/auth`)
-
-| Endpoint    | Method | Description                   | Auth Required | Request Body                |
-| ----------- | ------ | ----------------------------- | ------------- | --------------------------- |
-| `/register` | POST   | Register a new user           | No            | `{ name, email, password }` |
-| `/login`    | POST   | Authenticate user & get token | No            | `{ email, password }`       |
-
-#### Blog Routes (`/api/blogs`)
-
-| Endpoint | Method | Description             | Auth Required | Request Body                          |
-| -------- | ------ | ----------------------- | ------------- | ------------------------------------- |
-| `/`      | GET    | Get all blogs (supports `?search`, `?category`, `?page`, `?limit`) | No | None |
-| `/:id`   | GET    | Get a single blog by ID | No            | None                                  |
-| `/`      | POST   | Create a new blog       | Yes           | `{ title, category, content, image }` |
-| `/:id`   | PUT    | Update a blog           | Yes (Owner)   | `{ title, category, content, image }` |
-| `/:id`   | DELETE | Delete a blog           | Yes (Owner)   | None                                  |
-
-*Note: Protected routes require a valid JWT in the request header:*
-
-`Authorization: Bearer <token>`
+#### 5. Open the Application
+Navigate to `http://localhost:5000` in your web browser.
 
 ---
 
-*Built with ❤️ for Web Development Internship - Module 4.*
+### REST API Documentation
+
+#### Authentication Endpoints (`/api/auth`)
+
+| Endpoint | Method | Access | Description | Request Body | Response Sample |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `/register` | `POST` | Public | Registers a new user account | `{ "name": "...", "email": "...", "password": "..." }` | `HTTP 201`: `{ "success": true, "data": { "token": "...", "user": { "id": "...", "name": "...", "email": "..." } } }` |
+| `/login` | `POST` | Public | Authenticates credentials and issues JWT | `{ "email": "...", "password": "..." }` | `HTTP 200`: `{ "success": true, "data": { "token": "...", "user": { "id": "...", "name": "...", "email": "..." } } }` |
+| `/me` | `GET` | Private | Retrieves current authenticated profile | Header: `Authorization: Bearer <token>` | `HTTP 200`: `{ "success": true, "data": { "id": "...", "name": "...", "email": "...", "createdAt": "..." } }` |
+
+#### Blog Endpoints (`/api/blogs`)
+
+| Endpoint | Method | Access | Description | Request Parameters / Body |
+| :--- | :--- | :--- | :--- | :--- |
+| `/` | `GET` | Public | Get all published blogs with search, category filtering & pagination | Query: `?search=...&category=...&page=1&limit=10` |
+| `/:id` | `GET` | Public | Get a single blog post by its MongoDB ObjectId | URL param: `:id` |
+| `/my` | `GET` | Private | Retrieve only the currently authenticated user's blogs | Header: `Authorization: Bearer <token>` |
+| `/` | `POST` | Private | Create a new blog post attributed to `req.user` | Body: `{ "title": "...", "category": "...", "content": "...", "image": "..." }` |
+| `/:id` | `PUT` | Private (Owner) | Update an existing blog post (verifies author ownership) | URL param: `:id`, Body: `{ "title": "...", "category": "...", "content": "...", "image": "..." }` |
+| `/:id` | `DELETE` | Private (Owner) | Delete a blog post (verifies author ownership) | URL param: `:id`, Header: `Authorization: Bearer <token>` |
+
+---
+
+### Automated Verification & Testing
+
+The repository contains an automated test suite verifying all Module 5 functionality:
+
+```bash
+cd backend
+node test_module5.js
+```
+
+**Verification Checklist Tested**:
+1. User registration with valid credentials.
+2. Duplicate email registration rejection (`HTTP 400`).
+3. Correct login returning JWT and sanitized user payload.
+4. Wrong password / non-existing email rejections (`HTTP 401`).
+5. `GET /api/auth/me` user profile verification without password exposure.
+6. Route protection without token (`HTTP 401`).
+7. Route protection with invalid/expired token (`HTTP 401`).
+8. User-specific blog creation and isolated retrieval (`GET /api/blogs/my`).
+9. Strict multi-user data isolation on the dashboard.
+10. Cross-user update/delete protection (`HTTP 403 Forbidden`).
+11. Authorized user blog update & deletion.
+
+---
+
+*Developed for Web Development Internship – Module 5.*

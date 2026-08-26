@@ -92,6 +92,25 @@ const createBlog = async (req, res) => {
   }
 };
 
+// @desc    Get logged in user's blogs
+// @route   GET /api/blogs/my
+// @access  Private
+const getMyBlogs = async (req, res) => {
+  try {
+    const blogs = await Blog.find({ author: req.user._id })
+      .populate('author', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: blogs.length,
+      data: blogs
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Update a blog
 // @route   PUT /api/blogs/:id
 // @access  Private
@@ -105,7 +124,7 @@ const updateBlog = async (req, res) => {
 
     // Make sure user owns the blog
     if (blog.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Not authorized to update this blog' });
+      return res.status(403).json({ success: false, message: 'You are not authorized to modify this blog' });
     }
 
     blog = await Blog.findByIdAndUpdate(req.params.id, req.body, {
@@ -113,7 +132,7 @@ const updateBlog = async (req, res) => {
       runValidators: true
     });
 
-    res.status(200).json({ success: true, message: 'Blog updated', data: blog });
+    res.status(200).json({ success: true, message: 'Blog updated successfully', data: blog });
   } catch (error) {
     if (error.name === 'CastError') {
       return res.status(404).json({ success: false, message: 'Blog not found' });
@@ -135,7 +154,7 @@ const deleteBlog = async (req, res) => {
 
     // Make sure user owns the blog
     if (blog.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Not authorized to delete this blog' });
+      return res.status(403).json({ success: false, message: 'You are not authorized to modify this blog' });
     }
 
     await blog.deleteOne();
@@ -151,6 +170,7 @@ const deleteBlog = async (req, res) => {
 module.exports = {
   getBlogs,
   getBlog,
+  getMyBlogs,
   createBlog,
   updateBlog,
   deleteBlog

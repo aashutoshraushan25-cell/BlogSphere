@@ -697,6 +697,10 @@ footer {
   border-left: 4px solid var(--error-color);
 }
 
+.toast-info {
+  border-left: 4px solid var(--primary-color);
+}
+
 /* Utilities */
 .text-center { text-align: center; }
 .mb-1 { margin-bottom: 0.25rem; }

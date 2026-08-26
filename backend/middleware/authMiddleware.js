@@ -12,6 +12,10 @@ const protect = async (req, res, next) => {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
 
+      if (!token) {
+        return res.status(401).json({ success: false, message: 'Not authorized, no token provided' });
+      }
+
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -24,7 +28,7 @@ const protect = async (req, res, next) => {
 
       next();
     } catch (error) {
-      return res.status(401).json({ success: false, message: 'Not authorized, invalid token' });
+      return res.status(401).json({ success: false, message: 'Not authorized, invalid or expired token' });
     }
   } else {
     return res.status(401).json({ success: false, message: 'Not authorized, no token provided' });

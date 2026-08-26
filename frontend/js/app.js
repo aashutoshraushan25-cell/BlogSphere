@@ -1,11 +1,11 @@
 /**
- * BlogSphere - Main JavaScript Application (Backend Connected)
- * Handles Auth, CRUD operations via REST API, and UI interactivity
+ * BlogSphere - Main Application Logic
+ * Integrates Auth module, CRUD operations via REST API, and UI interactivity
  */
 
 const API_URL = '/api';
 
-// DOM Elements & Setup
+// DOM Elements & Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
@@ -18,151 +18,103 @@ function initApp() {
   
   // Page Specific Logic
   const path = window.location.pathname;
-  if (path.includes('index.html') || path.endsWith('/')) {
+  if (path.includes('index.html') || path.endsWith('/') || path === '') {
     renderHomeBlogs();
   } else if (path.includes('dashboard.html')) {
-    requireAuth();
-    renderDashboard();
+    if (requireAuth()) {
+      renderDashboard();
+    }
   } else if (path.includes('create-blog.html') || path.includes('edit-blog.html')) {
-    requireAuth();
-    setupCreateBlogForm();
+    if (requireAuth()) {
+      setupCreateBlogForm();
+    }
   } else if (path.includes('blog-details.html')) {
     renderBlogDetails();
   } else if (path.includes('profile.html')) {
-    requireAuth();
-    renderProfile();
+    if (requireAuth()) {
+      renderProfile();
+    }
   } else if (path.includes('login.html')) {
-    redirectIfAuth();
-    setupLoginForm();
+    if (!redirectIfAuth()) {
+      setupLoginForm();
+      checkAuthMessages();
+    }
   } else if (path.includes('register.html')) {
-    redirectIfAuth();
-    setupRegisterForm();
-  }
-
-  // Handle Logout buttons globally
-  document.querySelectorAll('#logoutBtn, .logout-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      logout();
-    });
-  });
-}
-
-// ==========================================
-// AUTHENTICATION LOGIC (API)
-// ==========================================
-
-// Register a new user
-async function register(name, email, password) {
-  try {
-    const res = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
-    const data = await res.json();
-    
-    if (data.success) {
-      localStorage.setItem('blogSphere_currentUser', JSON.stringify(data.data));
-      return true;
-    } else {
-      showToast(data.message, 'error');
-      return false;
+    if (!redirectIfAuth()) {
+      setupRegisterForm();
     }
-  } catch (error) {
-    showToast('Registration failed', 'error');
-    return false;
   }
 }
 
-// Login an existing user
-async function login(email, password) {
-  try {
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    
-    if (data.success) {
-      localStorage.setItem('blogSphere_currentUser', JSON.stringify(data.data));
-      return true;
-    } else {
-      showToast(data.message, 'error');
-      return false;
-    }
-  } catch (error) {
-    showToast('Login failed', 'error');
-    return false;
+// Check and display any session/redirect messages
+function checkAuthMessages() {
+  const sessionMsg = sessionStorage.getItem('session_message');
+  const redirectMsg = sessionStorage.getItem('auth_redirect_message');
+  const regSuccessMsg = sessionStorage.getItem('reg_success');
+
+  if (sessionMsg) {
+    showToast(sessionMsg, 'error');
+    displayAuthAlert(sessionMsg, 'error');
+    sessionStorage.removeItem('session_message');
+  } else if (redirectMsg) {
+    showToast(redirectMsg, 'info');
+    displayAuthAlert(redirectMsg, 'info');
+    sessionStorage.removeItem('auth_redirect_message');
+  } else if (regSuccessMsg) {
+    showToast(regSuccessMsg, 'success');
+    displayAuthAlert(regSuccessMsg, 'success');
+    sessionStorage.removeItem('reg_success');
   }
 }
 
-// Logout user
-function logout() {
-  localStorage.removeItem('blogSphere_currentUser');
-  showToast('Logged out successfully!', 'success');
-  setTimeout(() => {
-    window.location.href = 'index.html';
-  }, 1000);
-}
-
-// Get current logged in user
-function getCurrentUser() {
-  const user = localStorage.getItem('blogSphere_currentUser');
-  return user ? JSON.parse(user) : null;
-}
-
-// Route Protection
-function requireAuth() {
-  if (!getCurrentUser()) {
-    window.location.href = 'login.html';
-  }
-}
-
-function redirectIfAuth() {
-  if (getCurrentUser()) {
-    window.location.href = 'dashboard.html';
-  }
-}
-
-// Update navbar links
-function updateNavigation() {
-  const user = getCurrentUser();
-  const guestLinks = document.querySelectorAll('.guest-link');
-  const authLinks = document.querySelectorAll('.auth-link');
+function displayAuthAlert(message, type = 'error') {
+  const card = document.querySelector('.auth-card');
+  if (!card) return;
   
-  if (user) {
-    guestLinks.forEach(link => link.style.display = 'none');
-    authLinks.forEach(link => link.style.display = 'block');
+  const existingAlert = document.getElementById('authAlertBox');
+  if (existingAlert) existingAlert.remove();
+
+  const alertBox = document.createElement('div');
+  alertBox.id = 'authAlertBox';
+  alertBox.className = `alert alert-${type}`;
+  alertBox.style.padding = '0.75rem 1rem';
+  alertBox.style.marginBottom = '1.25rem';
+  alertBox.style.borderRadius = 'var(--radius-md)';
+  alertBox.style.fontSize = '0.875rem';
+  alertBox.style.display = 'flex';
+  alertBox.style.alignItems = 'center';
+  alertBox.style.gap = '0.5rem';
+
+  if (type === 'error') {
+    alertBox.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+    alertBox.style.color = 'var(--error-color)';
+    alertBox.style.border = '1px solid rgba(239, 68, 68, 0.2)';
+    alertBox.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <span>${message}</span>`;
+  } else if (type === 'success') {
+    alertBox.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+    alertBox.style.color = 'var(--success-color)';
+    alertBox.style.border = '1px solid rgba(16, 185, 129, 0.2)';
+    alertBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${message}</span>`;
   } else {
-    guestLinks.forEach(link => link.style.display = 'block');
-    authLinks.forEach(link => link.style.display = 'none');
+    alertBox.style.backgroundColor = 'rgba(99, 102, 241, 0.1)';
+    alertBox.style.color = 'var(--primary-color)';
+    alertBox.style.border = '1px solid rgba(99, 102, 241, 0.2)';
+    alertBox.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${message}</span>`;
+  }
+
+  const form = card.querySelector('form');
+  if (form) {
+    card.insertBefore(alertBox, form);
   }
 }
 
 // ==========================================
-// BLOG API LOGIC
+// BLOG API CALLS
 // ==========================================
 
-async function fetchUserProfile() {
-  const user = getCurrentUser();
-  if (!user || !user.token) return null;
-  
-  try {
-    const res = await fetch(`${API_URL}/auth/profile`, {
-      headers: {
-        'Authorization': `Bearer ${user.token}`
-      }
-    });
-    const data = await res.json();
-    return data.success ? data.data : null;
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    return null;
-  }
-}
-
+/**
+ * Fetch all public blogs (supports search, category, pagination)
+ */
 async function fetchBlogs(options = {}) {
   try {
     const queryParams = new URLSearchParams();
@@ -181,6 +133,9 @@ async function fetchBlogs(options = {}) {
   }
 }
 
+/**
+ * Fetch a single blog by ID
+ */
 async function fetchBlog(id) {
   try {
     const res = await fetch(`${API_URL}/blogs/${id}`);
@@ -192,74 +147,84 @@ async function fetchBlog(id) {
   }
 }
 
-async function apiUpdateBlog(id, blogData) {
-  const user = getCurrentUser();
-  if (!user || !user.token) return false;
-  
+/**
+ * Fetch currently authenticated user's private blogs (GET /api/blogs/my)
+ */
+async function fetchMyBlogs() {
   try {
-    const res = await fetch(`${API_URL}/blogs/${id}`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${user.token}`
-      },
-      body: JSON.stringify(blogData)
-    });
+    const res = await fetchWithAuth(`${API_URL}/blogs/my`);
     const data = await res.json();
-    
-    if (!data.success) showToast(data.message, 'error');
-    return data.success;
+    return data.success ? data.data : [];
   } catch (error) {
-    showToast('Failed to update blog', 'error');
-    return false;
+    console.error('Error fetching user blogs:', error);
+    return [];
   }
 }
 
+/**
+ * Create a new blog post (Protected: POST /api/blogs)
+ */
 async function apiCreateBlog(blogData) {
-  const user = getCurrentUser();
-  if (!user || !user.token) return false;
-  
   try {
-    const res = await fetch(`${API_URL}/blogs`, {
+    const res = await fetchWithAuth(`${API_URL}/blogs`, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${user.token}`
-      },
       body: JSON.stringify(blogData)
     });
     const data = await res.json();
     
-    if (!data.success) showToast(data.message, 'error');
+    if (!data.success) {
+      showToast(data.message || 'Failed to create blog', 'error');
+    }
     return data.success;
   } catch (error) {
-    showToast('Failed to create blog', 'error');
+    showToast(error.message || 'Failed to create blog', 'error');
     return false;
   }
 }
 
-async function apiDeleteBlog(id) {
-  const user = getCurrentUser();
-  if (!user || !user.token) return false;
-  
+/**
+ * Update an existing blog post (Protected: PUT /api/blogs/:id)
+ */
+async function apiUpdateBlog(id, blogData) {
   try {
-    const res = await fetch(`${API_URL}/blogs/${id}`, {
-      method: 'DELETE',
-      headers: { 
-        'Authorization': `Bearer ${user.token}`
-      }
+    const res = await fetchWithAuth(`${API_URL}/blogs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(blogData)
     });
     const data = await res.json();
-    if (!data.success) showToast(data.message, 'error');
+    
+    if (!data.success) {
+      showToast(data.message || 'Failed to update blog', 'error');
+    }
     return data.success;
   } catch (error) {
-    showToast('Failed to delete blog', 'error');
+    showToast(error.message || 'Failed to update blog', 'error');
+    return false;
+  }
+}
+
+/**
+ * Delete a blog post (Protected: DELETE /api/blogs/:id)
+ */
+async function apiDeleteBlog(id) {
+  try {
+    const res = await fetchWithAuth(`${API_URL}/blogs/${id}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    
+    if (!data.success) {
+      showToast(data.message || 'Failed to delete blog', 'error');
+    }
+    return data.success;
+  } catch (error) {
+    showToast(error.message || 'Failed to delete blog', 'error');
     return false;
   }
 }
 
 // ==========================================
-// UI & FORM LOGIC
+// FORM CONTROLLERS (LOGIN & REGISTER)
 // ==========================================
 
 // Setup Login Form
@@ -269,15 +234,35 @@ function setupLoginForm() {
   
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    
-    const success = await login(email, password);
-    if (success) {
-      showToast('Login successful!', 'success');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!email || !password) {
+      showToast('Please enter both email and password', 'error');
+      displayAuthAlert('Please enter both email and password', 'error');
+      return;
+    }
+
+    const originalBtnHTML = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing In...';
+
+    const result = await apiLogin(email, password);
+
+    if (result.success) {
+      showToast('Login successful! Redirecting...', 'success');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }, 1000);
+      }, 700);
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHTML;
+      showToast(result.message || 'Login failed', 'error');
+      displayAuthAlert(result.message || 'Invalid email or password', 'error');
     }
   });
 }
@@ -293,62 +278,110 @@ function setupRegisterForm() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
     const confirmPassword = document.getElementById('confirmPassword').value.trim();
-    
-    if (password !== confirmPassword) {
-      showToast('Passwords do not match', 'error');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    if (name.length < 2) {
+      showToast('Name must be at least 2 characters', 'error');
+      displayAuthAlert('Name must be at least 2 characters', 'error');
       return;
     }
-    
+
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      showToast('Please provide a valid email address', 'error');
+      displayAuthAlert('Please provide a valid email address', 'error');
+      return;
+    }
+
     if (password.length < 6) {
       showToast('Password must be at least 6 characters', 'error');
+      displayAuthAlert('Password must be at least 6 characters', 'error');
       return;
     }
-    
-    const success = await register(name, email, password);
-    if (success) {
-      showToast('Registration successful!', 'success');
+
+    if (password !== confirmPassword) {
+      showToast('Passwords do not match', 'error');
+      displayAuthAlert('Passwords do not match', 'error');
+      return;
+    }
+
+    const originalBtnHTML = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+
+    const result = await apiRegister(name, email, password);
+
+    if (result.success) {
+      sessionStorage.setItem('reg_success', 'Account created successfully! Please sign in.');
+      showToast('Registration successful! Redirecting to login...', 'success');
       setTimeout(() => {
-        window.location.href = 'dashboard.html';
-      }, 1000);
+        window.location.href = 'login.html';
+      }, 800);
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHTML;
+      showToast(result.message || 'Registration failed', 'error');
+      displayAuthAlert(result.message || 'Registration failed. Email may already be registered.', 'error');
     }
   });
 }
 
-// Setup Create Blog Form
+// ==========================================
+// CREATE & EDIT BLOG FORM
+// ==========================================
+
 async function setupCreateBlogForm() {
   const form = document.getElementById('createBlogForm');
   const contentInput = document.getElementById('content');
   const charCounter = document.getElementById('charCounter');
-  const formTitle = document.querySelector('.auth-container h2');
+  const formTitle = document.querySelector('.create-blog-container h1') || document.querySelector('.auth-container h2');
   const submitBtn = document.querySelector('#createBlogForm button[type="submit"]');
   
   if (!form) return;
   
   const urlParams = new URLSearchParams(window.location.search);
-  const editId = urlParams.get('edit') || urlParams.get('id');
+  const editId = urlParams.get('id') || urlParams.get('edit');
   
   if (editId) {
     if (formTitle) formTitle.textContent = 'Edit Blog Post';
     if (submitBtn) submitBtn.textContent = 'Update Blog';
+    document.title = 'Edit Blog - BlogSphere';
     
     const blog = await fetchBlog(editId);
     if (blog) {
+      // Check if current user is the author
+      const currentUser = getCurrentUser();
+      const authorId = blog.author && typeof blog.author === 'object' ? blog.author._id : blog.author;
+      if (currentUser && authorId && authorId.toString() !== currentUser.id && authorId.toString() !== currentUser._id) {
+        showToast('You are not authorized to edit this blog', 'error');
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1200);
+        return;
+      }
+
       document.getElementById('title').value = blog.title;
       document.getElementById('category').value = blog.category;
       contentInput.value = blog.content;
       if (document.getElementById('image') && blog.image) {
         document.getElementById('image').value = blog.image;
       }
-      const wordCount = blog.content.trim() === '' ? 0 : blog.content.trim().split(/\s+/).length;
-      charCounter.textContent = `${wordCount} words | ${blog.content.length} characters`;
+      const words = blog.content.trim() === '' ? 0 : blog.content.trim().split(/\s+/).filter(Boolean).length;
+      charCounter.textContent = `${words} words | ${blog.content.length} characters`;
+    } else {
+      showToast('Blog not found', 'error');
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1200);
+      return;
     }
   }
   
   contentInput.addEventListener('input', () => {
     const text = contentInput.value;
     const charCount = text.length;
-    const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-    charCounter.textContent = `${wordCount} words | ${charCount} characters`;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).filter(Boolean).length;
+    charCounter.textContent = `${words} words | ${charCount} characters`;
   });
   
   form.addEventListener('submit', async (e) => {
@@ -359,17 +392,19 @@ async function setupCreateBlogForm() {
     const imageInput = document.getElementById('image');
     const image = imageInput ? imageInput.value.trim() : '';
     
-    if (title.length < 5 || content.length < 50) {
-      showToast('Title must be 5+ chars and content 50+ chars', 'error');
+    if (title.length < 5) {
+      showToast('Title must be at least 5 characters long', 'error');
+      return;
+    }
+
+    if (content.length < 50) {
+      showToast('Content must be at least 50 characters long', 'error');
       return;
     }
     
-    // Disable submit button & show loading state
-    const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Submit';
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-    }
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
     
     let success;
     if (editId) {
@@ -378,26 +413,156 @@ async function setupCreateBlogForm() {
       success = await apiCreateBlog({ title, category, content, image });
     }
     
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = originalBtnText;
-    }
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
     
     if (success) {
       showToast(editId ? 'Blog updated successfully!' : 'Blog published successfully!', 'success');
       setTimeout(() => {
         window.location.href = 'dashboard.html';
-      }, 1000);
+      }, 800);
     }
   });
 }
 
-// Globals for Pagination and Filters
+// ==========================================
+// DASHBOARD RENDERING
+// ==========================================
+
+async function renderDashboard() {
+  const user = getCurrentUser();
+  const userNameEl = document.getElementById('dashboardUserName');
+  if (userNameEl && user) {
+    userNameEl.textContent = user.name;
+  }
+  
+  const listContainer = document.getElementById('dashboardList');
+  if (listContainer) {
+    listContainer.innerHTML = `
+      <div class="text-center" style="padding: 3rem 0;">
+        <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary-color);"></i>
+        <p class="mt-4">Loading your dashboard...</p>
+      </div>
+    `;
+  }
+
+  // Fetch only the logged-in user's blogs from GET /api/blogs/my
+  const userBlogs = await fetchMyBlogs();
+  
+  const statPublished = document.getElementById('statPublished');
+  const statWords = document.getElementById('statWords');
+  
+  if (statPublished) statPublished.textContent = userBlogs.length;
+  if (statWords) {
+    const totalWords = userBlogs.reduce((acc, blog) => {
+      const words = blog.content ? blog.content.trim().split(/\s+/).filter(Boolean).length : 0;
+      return acc + words;
+    }, 0);
+    statWords.textContent = totalWords.toLocaleString();
+  }
+  
+  if (!listContainer) return;
+  
+  if (userBlogs.length === 0) {
+    listContainer.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-regular fa-folder-open"></i>
+        <h3>No blogs yet</h3>
+        <p>You haven't created any blogs yet. Start your writing journey today!</p>
+        <a href="create-blog.html" class="btn btn-primary mt-4">
+          <i class="fa-solid fa-plus" style="margin-right: 0.5rem;"></i> Create New Blog
+        </a>
+      </div>
+    `;
+    return;
+  }
+  
+  listContainer.innerHTML = userBlogs.map(blog => `
+    <div class="dashboard-list-item">
+      <div class="item-info">
+        <h4>${escapeHTML(blog.title)}</h4>
+        <div class="item-meta">
+          <span><i class="fa-regular fa-calendar"></i> ${formatDate(blog.createdAt)}</span>
+          <span style="text-transform: capitalize;"><i class="fa-solid fa-tag"></i> ${escapeHTML(blog.category.replace(/-/g, ' '))}</span>
+          <span><i class="fa-solid fa-clock"></i> ${blog.readTime || 1} min read</span>
+        </div>
+      </div>
+      <div class="item-actions">
+        <a href="blog-details.html?id=${blog._id}" class="btn btn-sm btn-outline" title="View Blog">
+          <i class="fa-solid fa-eye"></i> View
+        </a>
+        <button class="btn btn-sm btn-outline" onclick="editBlog('${blog._id}')" title="Edit Blog">
+          <i class="fa-solid fa-pen"></i> Edit
+        </button>
+        <button class="btn btn-sm btn-danger" onclick="deleteBlog('${blog._id}')" title="Delete Blog">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Delete Blog Handler
+window.deleteBlog = async function(id) {
+  if (confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
+    const success = await apiDeleteBlog(id);
+    if (success) {
+      showToast('Blog deleted successfully', 'success');
+      renderDashboard(); // Refresh dashboard data
+    }
+  }
+};
+
+// Edit Blog Handler
+window.editBlog = function(id) {
+  window.location.href = `edit-blog.html?id=${id}`;
+};
+
+// ==========================================
+// PROFILE RENDERING
+// ==========================================
+
+async function renderProfile() {
+  const loadingEl = document.getElementById('profileLoading');
+  const contentEl = document.getElementById('profileContent');
+
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (contentEl) contentEl.style.display = 'none';
+  
+  const profile = await apiGetMe();
+  const userBlogs = await fetchMyBlogs();
+  
+  if (loadingEl) loadingEl.style.display = 'none';
+  
+  if (!profile) {
+    showToast('Failed to load profile details', 'error');
+    return;
+  }
+  
+  if (contentEl) contentEl.style.display = 'block';
+  
+  const initials = profile.name ? profile.name.charAt(0).toUpperCase() : 'U';
+  const profileInitialsEl = document.getElementById('profileInitials');
+  const profileNameEl = document.getElementById('profileName');
+  const profileEmailEl = document.getElementById('profileEmail');
+  const profileMemberSinceEl = document.getElementById('profileMemberSince');
+  const profileTotalBlogsEl = document.getElementById('profileTotalBlogs');
+
+  if (profileInitialsEl) profileInitialsEl.textContent = initials;
+  if (profileNameEl) profileNameEl.textContent = profile.name;
+  if (profileEmailEl) profileEmailEl.textContent = profile.email;
+  if (profileMemberSinceEl) profileMemberSinceEl.textContent = formatDate(profile.createdAt);
+  if (profileTotalBlogsEl) profileTotalBlogsEl.textContent = userBlogs.length;
+}
+
+// ==========================================
+// HOME PAGE BLOGS RENDERING
+// ==========================================
+
 let currentPage = 1;
 let currentSearch = '';
 let currentCategory = '';
 
-// Render Blogs on Home Page
 async function renderHomeBlogs() {
   const featuredContainer = document.getElementById('featuredBlogs');
   const latestContainer = document.getElementById('latestBlogs');
@@ -406,23 +571,30 @@ async function renderHomeBlogs() {
   
   if (!featuredContainer || !latestContainer) return;
   
+  latestContainer.innerHTML = `
+    <div class="text-center w-100" style="padding: 2rem 0; grid-column: 1 / -1;">
+      <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary-color);"></i>
+      <p class="mt-4">Loading articles...</p>
+    </div>
+  `;
+
   const response = await fetchBlogs({ search: currentSearch, category: currentCategory, page: currentPage, limit: 10 });
   const blogs = response.data || [];
   const pagination = response.pagination;
   
   if (blogs.length === 0) {
     if (currentPage === 1 && !currentSearch && !currentCategory) {
-      latestContainer.innerHTML = '<p class="text-center w-100">No blogs published yet.</p>';
-      featuredContainer.innerHTML = '<p class="text-center w-100">No featured blogs.</p>';
+      latestContainer.innerHTML = '<p class="text-center w-100" style="grid-column: 1 / -1;">No blogs published yet.</p>';
+      featuredContainer.innerHTML = '<p class="text-center w-100">No featured blogs available.</p>';
     } else {
-      latestContainer.innerHTML = '<p class="text-center w-100">No blogs found matching your criteria.</p>';
-      if (currentPage === 1) featuredContainer.innerHTML = '<p class="text-center w-100">No featured blogs.</p>';
+      latestContainer.innerHTML = '<p class="text-center w-100" style="grid-column: 1 / -1;">No blogs found matching your criteria.</p>';
+      if (currentPage === 1) featuredContainer.innerHTML = '<p class="text-center w-100">No matching featured story.</p>';
     }
     if (paginationContainer) paginationContainer.style.display = 'none';
     return;
   }
   
-  // Render Featured Blog only on page 1 without search
+  // Render Featured Blog only on page 1 without filters
   if (currentPage === 1 && !currentSearch && !currentCategory && blogs.length > 0) {
     const featured = blogs[0];
     featuredContainer.innerHTML = createBlogCardHTML(featured);
@@ -430,20 +602,18 @@ async function renderHomeBlogs() {
     const latest = blogs.slice(1);
     if (latest.length > 0) {
       latestContainer.innerHTML = latest.map(blog => createBlogCardHTML(blog)).join('');
-      document.getElementById('latestSection').style.display = 'block';
+      const latestSec = document.getElementById('latestSection');
+      if (latestSec) latestSec.style.display = 'block';
     } else {
-      latestContainer.innerHTML = '';
-      if (!currentSearch && !currentCategory) {
-        document.getElementById('latestSection').style.display = 'none';
-      }
+      latestContainer.innerHTML = '<p class="text-center w-100" style="grid-column: 1 / -1;">More articles coming soon!</p>';
     }
   } else {
-    // Hide featured section when paginating or searching
-    if (document.getElementById('featured')) {
-      document.getElementById('featured').style.display = 'none';
-    }
+    // Hide featured section when paginating or filtering
+    const feat = document.getElementById('featured');
+    if (feat) feat.style.display = 'none';
     latestContainer.innerHTML = blogs.map(blog => createBlogCardHTML(blog)).join('');
-    document.getElementById('latestSection').style.display = 'block';
+    const latestSec = document.getElementById('latestSection');
+    if (latestSec) latestSec.style.display = 'block';
   }
   
   // Setup Pagination
@@ -480,7 +650,7 @@ async function renderHomeBlogs() {
   }
 }
 
-// Setup Filters and Search Event Listeners
+// Search and Filter Setup
 document.addEventListener('DOMContentLoaded', () => {
   const searchBtn = document.getElementById('searchBtn');
   const searchInput = document.getElementById('searchInput');
@@ -505,7 +675,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filterBtns.length > 0) {
     filterBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
-        // Update active class
         filterBtns.forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         
@@ -517,110 +686,63 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Render Dashboard Data
-async function renderDashboard() {
-  const user = getCurrentUser();
-  const userNameEl = document.getElementById('dashboardUserName');
-  if (userNameEl) userNameEl.textContent = user.name;
+// ==========================================
+// BLOG DETAILS RENDERING
+// ==========================================
+
+async function renderBlogDetails() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const blogId = urlParams.get('id');
   
-  const response = await fetchBlogs({ limit: 1000, author: user._id });
-  const userBlogs = response.data || [];
-  
-  const statPublished = document.getElementById('statPublished');
-  const statWords = document.getElementById('statWords');
-  
-  if (statPublished) statPublished.textContent = userBlogs.length;
-  if (statWords) {
-    const totalWords = userBlogs.reduce((acc, blog) => acc + (blog.content.trim().split(/\s+/).length), 0);
-    statWords.textContent = totalWords;
-  }
-  
-  const listContainer = document.getElementById('dashboardList');
-  if (!listContainer) return;
-  
-  if (userBlogs.length === 0) {
-    listContainer.innerHTML = `
-      <div class="empty-state">
-        <i class="fa-regular fa-folder-open"></i>
-        <h3>No posts yet</h3>
-        <p>You haven't published any blogs. Create your first post now!</p>
-        <a href="create-blog.html" class="btn btn-primary mt-4">Create New Blog</a>
-      </div>
-    `;
+  const loadingEl = document.getElementById('blogDetailsLoading');
+  const errorEl = document.getElementById('blogDetailsError');
+  const contentEl = document.getElementById('blogDetailsContent');
+
+  if (!blogId) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) errorEl.style.display = 'block';
     return;
   }
-  
-  listContainer.innerHTML = userBlogs.map(blog => `
-    <div class="dashboard-list-item">
-      <div class="item-info">
-        <h4>${blog.title}</h4>
-        <div class="item-meta">
-          <span><i class="fa-regular fa-calendar"></i> ${formatDate(blog.createdAt)}</span>
-          <span style="text-transform: capitalize;"><i class="fa-solid fa-tag"></i> ${blog.category.replace('-', ' ')}</span>
-        </div>
-      </div>
-      <div class="item-actions">
-        <button class="btn btn-sm btn-outline" onclick="editBlog('${blog._id}')">
-          <i class="fa-solid fa-pen"></i> Edit
-        </button>
-        <button class="btn btn-sm btn-danger" onclick="deleteBlog('${blog._id}')">
-          <i class="fa-solid fa-trash"></i> Delete
-        </button>
-      </div>
-    </div>
-  `).join('');
-}
 
-// Render Profile Data
-async function renderProfile() {
-  const user = getCurrentUser();
-  const profile = await fetchUserProfile();
+  const blog = await fetchBlog(blogId);
   
-  document.getElementById('profileLoading').style.display = 'none';
+  if (loadingEl) loadingEl.style.display = 'none';
   
-  if (!profile) {
-    showToast('Failed to load profile', 'error');
+  if (!blog) {
+    if (errorEl) errorEl.style.display = 'block';
     return;
   }
-  
-  document.getElementById('profileContent').style.display = 'block';
-  document.getElementById('profileInitials').textContent = profile.name.charAt(0).toUpperCase();
-  document.getElementById('profileName').textContent = profile.name;
-  document.getElementById('profileEmail').textContent = profile.email;
-  
-  // Format Member Since
-  document.getElementById('profileMemberSince').textContent = formatDate(profile.createdAt);
-  
-  // Calculate Total Blogs
-  const response = await fetchBlogs({ limit: 1000, author: user._id });
-  const userBlogs = response.data || [];
-  
-  document.getElementById('profileTotalBlogs').textContent = userBlogs.length;
-}
 
-// Delete Blog
-window.deleteBlog = async function(id) {
-  if (confirm('Are you sure you want to delete this blog post?')) {
-    const success = await apiDeleteBlog(id);
-    if (success) {
-      showToast('Blog deleted successfully', 'success');
-      renderDashboard(); // Refresh
+  const authorName = blog.author && typeof blog.author === 'object' ? blog.author.name : (blog.author || 'Anonymous');
+  
+  if (contentEl) contentEl.style.display = 'block';
+  document.getElementById('detailCategory').textContent = blog.category.replace(/-/g, ' ');
+  document.getElementById('detailTitle').textContent = blog.title;
+  document.getElementById('detailAuthor').innerHTML = `<i class="fa-solid fa-user"></i> ${escapeHTML(authorName)}`;
+  document.getElementById('detailDate').innerHTML = `<i class="fa-solid fa-calendar"></i> ${formatDate(blog.createdAt)}`;
+  document.getElementById('detailReadTime').innerHTML = `<i class="fa-solid fa-clock"></i> ${blog.readTime || 1} min read`;
+  
+  const imageEl = document.getElementById('detailImage');
+  if (imageEl) {
+    if (blog.image) {
+      imageEl.src = blog.image;
+      imageEl.style.display = 'block';
+    } else {
+      imageEl.style.display = 'none';
     }
   }
-};
-
-window.editBlog = function(id) {
-  window.location.href = `edit-blog.html?id=${id}`;
-};
+  
+  document.getElementById('detailContent').textContent = blog.content;
+}
 
 // ==========================================
-// UTILITIES
+// UTILITY FUNCTIONS
 // ==========================================
 
 function createBlogCardHTML(blog) {
-  const authorName = blog.author && typeof blog.author === 'object' ? blog.author.name : (blog.author || 'Unknown');
+  const authorName = blog.author && typeof blog.author === 'object' ? blog.author.name : (blog.author || 'Anonymous');
   const initial = authorName.charAt(0).toUpperCase();
-  const catName = blog.category.replace('-', ' ');
+  const catName = blog.category.replace(/-/g, ' ');
   
   let imgUrl = blog.image;
   if (!imgUrl) {
@@ -637,19 +759,19 @@ function createBlogCardHTML(blog) {
   return `
     <div class="blog-card">
       <div class="blog-card-image">
-        <img src="${imgUrl}" alt="${blog.title}" loading="lazy">
+        <img src="${imgUrl}" alt="${escapeHTML(blog.title)}" loading="lazy">
       </div>
       <div class="blog-card-content">
-        <span class="blog-category">${catName}</span>
-        <h3 class="blog-title"><a href="blog-details.html?id=${blog._id}">${blog.title}</a></h3>
-        <p class="blog-excerpt">${blog.content.substring(0, 120)}...</p>
+        <span class="blog-category">${escapeHTML(catName)}</span>
+        <h3 class="blog-title"><a href="blog-details.html?id=${blog._id}">${escapeHTML(blog.title)}</a></h3>
+        <p class="blog-excerpt">${escapeHTML(blog.content.substring(0, 120))}...</p>
         <div class="blog-meta">
           <div class="blog-author">
             <div class="author-avatar">${initial}</div>
-            <span>${authorName}</span>
+            <span>${escapeHTML(authorName)}</span>
           </div>
           <div>
-            <span>${formatDate(blog.createdAt)}</span> • <span>${blog.readTime} min read</span>
+            <span>${formatDate(blog.createdAt)}</span> • <span>${blog.readTime || 1} min read</span>
           </div>
         </div>
         <a href="blog-details.html?id=${blog._id}" class="btn btn-outline" style="margin-top: 1rem; display: inline-block;">Read More</a>
@@ -658,47 +780,20 @@ function createBlogCardHTML(blog) {
   `;
 }
 
-async function renderBlogDetails() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const blogId = urlParams.get('id');
-  
-  if (!blogId) {
-    document.getElementById('blogDetailsLoading').style.display = 'none';
-    document.getElementById('blogDetailsError').style.display = 'block';
-    return;
-  }
-
-  const blog = await fetchBlog(blogId);
-  
-  document.getElementById('blogDetailsLoading').style.display = 'none';
-  
-  if (!blog) {
-    document.getElementById('blogDetailsError').style.display = 'block';
-    return;
-  }
-
-  const authorName = blog.author && typeof blog.author === 'object' ? blog.author.name : (blog.author || 'Unknown');
-  
-  document.getElementById('blogDetailsContent').style.display = 'block';
-  document.getElementById('detailCategory').textContent = blog.category.replace('-', ' ');
-  document.getElementById('detailTitle').textContent = blog.title;
-  document.getElementById('detailAuthor').innerHTML = `<i class="fa-solid fa-user"></i> ${authorName}`;
-  document.getElementById('detailDate').innerHTML = `<i class="fa-solid fa-calendar"></i> ${formatDate(blog.createdAt)}`;
-  document.getElementById('detailReadTime').innerHTML = `<i class="fa-solid fa-clock"></i> ${blog.readTime} min read`;
-  
-  if (blog.image) {
-    document.getElementById('detailImage').src = blog.image;
-    document.getElementById('detailImage').style.display = 'block';
-  } else {
-    document.getElementById('detailImage').style.display = 'none';
-  }
-  
-  document.getElementById('detailContent').textContent = blog.content;
-}
-
 function formatDate(isoString) {
+  if (!isoString) return '-';
   const date = new Date(isoString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function setupMobileMenu() {
@@ -706,15 +801,15 @@ function setupMobileMenu() {
   const links = document.querySelector('.nav-links');
   
   if (btn && links) {
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       links.classList.toggle('active');
-    });
+    };
   }
 }
 
 function setupPasswordToggles() {
   document.querySelectorAll('.password-toggle').forEach(btn => {
-    btn.addEventListener('click', function(e) {
+    btn.onclick = function(e) {
       e.preventDefault();
       const input = this.previousElementSibling;
       const icon = this.querySelector('i');
@@ -728,7 +823,7 @@ function setupPasswordToggles() {
         icon.classList.remove('fa-eye-slash');
         icon.classList.add('fa-eye');
       }
-    });
+    };
   });
 }
 
@@ -741,9 +836,13 @@ function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   
-  const icon = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:var(--success-color)"></i>' 
-                                  : '<i class="fa-solid fa-circle-exclamation" style="color:var(--error-color)"></i>';
-                                  
+  let icon = '<i class="fa-solid fa-circle-check" style="color:var(--success-color)"></i>';
+  if (type === 'error') {
+    icon = '<i class="fa-solid fa-circle-exclamation" style="color:var(--error-color)"></i>';
+  } else if (type === 'info') {
+    icon = '<i class="fa-solid fa-circle-info" style="color:var(--primary-color)"></i>';
+  }
+                                   
   toast.innerHTML = `
     ${icon}
     <span>${message}</span>
@@ -758,5 +857,5 @@ function showToast(message, type = 'success') {
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  }, 3500);
 }

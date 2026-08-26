@@ -16,11 +16,10 @@ function initApp() {
   setupMobileMenu();
   setupPasswordToggles();
   
-  // Page Specific Logic
-  const path = window.location.pathname;
-  if (path.includes('index.html') || path.endsWith('/') || path === '') {
-    renderHomeBlogs();
-  } else if (path.includes('dashboard.html')) {
+  // Page Specific Logic based on current URL path
+  const path = (window.location.pathname || '').toLowerCase();
+  
+  if (path.includes('dashboard.html')) {
     if (requireAuth()) {
       renderDashboard();
     }
@@ -43,6 +42,9 @@ function initApp() {
     if (!redirectIfAuth()) {
       setupRegisterForm();
     }
+  } else {
+    // Default to Home page (index.html, /BlogSphere, /BlogSphere/, /, etc.)
+    renderHomeBlogs();
   }
 }
 

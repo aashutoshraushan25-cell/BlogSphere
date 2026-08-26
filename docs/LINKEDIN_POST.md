@@ -47,7 +47,9 @@ Huge thanks to the mentors and the internship team for their continuous guidance
 
 ---
 
-## 📌 Checklist Before Posting:
+## 📌 Checklist Before Posting
+
 1. Ensure your GitHub repo is set to **Public**.
 2. Take 2–4 high-resolution screenshots of the **Home feed**, **Dashboard**, **Create Blog page**, and **User Profile** to attach as an image carousel.
 3. Tag your internship organization/mentors in the post.
+

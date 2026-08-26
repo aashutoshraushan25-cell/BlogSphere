@@ -177,11 +177,23 @@ async function fetchWithAuth(url, options = {}) {
 }
 
 // ==========================================
-// AUTH API CALLS
-// ==========================================
+// DEMO USERS STORAGE FOR STATIC HOSTS
+const DEMO_USERS_KEY = 'blogSphere_demo_users';
+function getDemoUsers() {
+  try {
+    const raw = localStorage.getItem(DEMO_USERS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  const defaults = [
+    { _id: 'user_aashutosh_id', id: 'user_aashutosh_id', name: 'Aashutosh Raushan', email: 'aashutosh@example.com', password: 'password123', createdAt: '2026-01-15T10:00:00.000Z' },
+    { _id: 'user_tech_id', id: 'user_tech_id', name: 'Tech Enthusiast', email: 'tech@example.com', password: 'password123', createdAt: '2026-02-01T12:00:00.000Z' }
+  ];
+  localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(defaults));
+  return defaults;
+}
 
 /**
- * Login user via backend API
+ * Login user via backend API (with static fallback)
  * @param {string} email 
  * @param {string} password 
  * @returns {Promise<{success: boolean, message?: string, data?: object}>}
@@ -194,18 +206,32 @@ async function apiLogin(email, password) {
       body: JSON.stringify({ email, password })
     });
     
-    const data = await res.json();
-    if (data.success && data.data && data.data.token) {
-      setAuthSession(data.data.token, data.data.user || data.data);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.data && data.data.token) {
+        setAuthSession(data.data.token, data.data.user || data.data);
+      }
+      return data;
+    } else if (res.status === 400 || res.status === 401) {
+      return await res.json();
     }
-    return data;
   } catch (error) {
-    return { success: false, message: error.message || 'Network error during login' };
+    // Fallback for static hosting (GitHub Pages without running backend)
   }
+
+  // Client-side fallback authentication
+  const users = getDemoUsers();
+  const found = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim() && u.password === password);
+  if (found) {
+    const fakeToken = 'demo_jwt_token_' + Date.now();
+    setAuthSession(fakeToken, found);
+    return { success: true, message: 'Login successful (Demo Mode)', data: { token: fakeToken, user: found } };
+  }
+  return { success: false, message: 'Invalid email or password' };
 }
 
 /**
- * Register user via backend API
+ * Register user via backend API (with static fallback)
  * @param {string} name 
  * @param {string} email 
  * @param {string} password 
@@ -219,26 +245,60 @@ async function apiRegister(name, email, password) {
       body: JSON.stringify({ name, email, password })
     });
     
-    const data = await res.json();
-    return data;
+    if (res.ok || res.status === 400) {
+      return await res.json();
+    }
   } catch (error) {
-    return { success: false, message: error.message || 'Network error during registration' };
+    // Fallback for static hosting
   }
+
+  // Client-side fallback registration
+  const users = getDemoUsers();
+  if (users.some(u => u.email.toLowerCase() === email.toLowerCase().trim())) {
+    return { success: false, message: 'User already exists with this email' };
+  }
+
+  const newUser = {
+    _id: 'user_' + Date.now(),
+    id: 'user_' + Date.now(),
+    name: name.trim(),
+    email: email.toLowerCase().trim(),
+    password,
+    createdAt: new Date().toISOString()
+  };
+  users.push(newUser);
+  localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+  return { success: true, message: 'Registration successful', data: { user: newUser } };
 }
 
 /**
- * Fetch authenticated user profile from GET /api/auth/me
+ * Fetch authenticated user profile from GET /api/auth/me (with static fallback)
  * @returns {Promise<object|null>}
  */
 async function apiGetMe() {
   try {
     const res = await fetchWithAuth(`${API_BASE_URL}/auth/me`);
-    const data = await res.json();
-    return data.success ? data.data : null;
+    if (res.ok) {
+      const data = await res.json();
+      return data.success ? data.data : null;
+    }
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    return null;
+    // Fallback for static hosting
   }
+
+  const currentUser = getCurrentUser();
+  if (currentUser) {
+    const users = getDemoUsers();
+    const userDetails = users.find(u => u.email.toLowerCase() === (currentUser.email || '').toLowerCase()) || currentUser;
+    return {
+      _id: userDetails._id || userDetails.id,
+      id: userDetails._id || userDetails.id,
+      name: userDetails.name,
+      email: userDetails.email,
+      createdAt: userDetails.createdAt || '2026-01-15T10:00:00.000Z'
+    };
+  }
+  return null;
 }
 
 // ==========================================

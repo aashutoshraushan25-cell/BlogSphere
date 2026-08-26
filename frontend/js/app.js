@@ -109,6 +109,97 @@ function displayAuthAlert(message, type = 'error') {
 }
 
 // ==========================================
+// DEMO BLOGS STORAGE FOR STATIC HOSTS
+// ==========================================
+const DEMO_BLOGS_KEY = 'blogSphere_demo_blogs';
+
+const INITIAL_DEMO_BLOGS = [
+  {
+    _id: '6a869dd2178b36f6a37d9e38',
+    title: 'The Rise of Artificial Intelligence in 2026',
+    category: 'artificial-intelligence',
+    content: 'Artificial Intelligence and machine learning are revolutionizing industries across the globe. From automated coding assistants and generative language models to autonomous systems, AI is transforming how we build software and solve complex problems in modern business and everyday life.',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&q=80',
+    readTime: 4,
+    createdAt: '2026-02-24T10:00:00.000Z',
+    author: {
+      _id: 'user_aashutosh_id',
+      name: 'Aashutosh Raushan',
+      email: 'aashutosh@example.com'
+    }
+  },
+  {
+    _id: '6a869dd2178b36f6a37d9e39',
+    title: 'Getting Started with Modern Web Development',
+    category: 'web-development',
+    content: 'Web development is evolving at a rapid pace with modern frameworks, tools, and best practices. In this article, we will explore HTML5 semantic elements, modern CSS layout techniques such as Flexbox and CSS Grid, and modern JavaScript features that make web development faster and more interactive than ever before.',
+    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80',
+    readTime: 3,
+    createdAt: '2026-02-20T12:00:00.000Z',
+    author: {
+      _id: 'user_aashutosh_id',
+      name: 'Aashutosh Raushan',
+      email: 'aashutosh@example.com'
+    }
+  },
+  {
+    _id: '6a869dd2178b36f6a37d9e40',
+    title: 'Building Cross-Platform Mobile Apps in 2026',
+    category: 'mobile-apps',
+    content: 'Cross-platform mobile application development allows developers to write code once and deploy across iOS and Android seamlessly. Learn about performance optimization, responsive layouts, native device features, and state management for scalable apps.',
+    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&q=80',
+    readTime: 3,
+    createdAt: '2026-02-18T14:30:00.000Z',
+    author: {
+      _id: 'user_tech_id',
+      name: 'Tech Enthusiast',
+      email: 'tech@example.com'
+    }
+  },
+  {
+    _id: '6a869dd2178b36f6a37d9e41',
+    title: 'Career Growth Strategies for Software Engineers',
+    category: 'career',
+    content: 'Navigating a career in software development requires continuous learning, strong problem-solving skills, and effective communication. Discover how to build impactful projects, contribute to open-source, and prepare for technical interviews to accelerate your career.',
+    image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&q=80',
+    readTime: 3,
+    createdAt: '2026-02-15T09:15:00.000Z',
+    author: {
+      _id: 'user_aashutosh_id',
+      name: 'Aashutosh Raushan',
+      email: 'aashutosh@example.com'
+    }
+  },
+  {
+    _id: '6a869dd2178b36f6a37d9e42',
+    title: 'Continuous Learning and Modern Education in Tech',
+    category: 'education',
+    content: 'The tech industry values hands-on practice, curiosity, and persistent problem solving. Explore the best ways to structure your daily learning habits, build real-world full stack projects, and master modern development concepts effectively.',
+    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80',
+    readTime: 2,
+    createdAt: '2026-02-10T16:45:00.000Z',
+    author: {
+      _id: 'user_tech_id',
+      name: 'Tech Enthusiast',
+      email: 'tech@example.com'
+    }
+  }
+];
+
+function getDemoBlogs() {
+  try {
+    const raw = localStorage.getItem(DEMO_BLOGS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  localStorage.setItem(DEMO_BLOGS_KEY, JSON.stringify(INITIAL_DEMO_BLOGS));
+  return INITIAL_DEMO_BLOGS;
+}
+
+function saveDemoBlogs(blogs) {
+  localStorage.setItem(DEMO_BLOGS_KEY, JSON.stringify(blogs));
+}
+
+// ==========================================
 // BLOG API CALLS
 // ==========================================
 
@@ -125,12 +216,49 @@ async function fetchBlogs(options = {}) {
     if (options.author) queryParams.append('author', options.author);
 
     const res = await fetch(`${API_URL}/blogs?${queryParams.toString()}`);
-    const data = await res.json();
-    return data.success ? data : { data: [], pagination: null };
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.data && data.data.length > 0) {
+        return data;
+      }
+    }
   } catch (error) {
-    console.error('Error fetching blogs:', error);
-    return { data: [], pagination: null };
+    // Network failed, smoothly fallback to demo data
   }
+
+  // Client-side demo fallback for GitHub Pages
+  let list = [...getDemoBlogs()];
+  if (options.category) {
+    list = list.filter(b => b.category === options.category);
+  }
+  if (options.search) {
+    const s = options.search.toLowerCase();
+    list = list.filter(b => b.title.toLowerCase().includes(s) || b.content.toLowerCase().includes(s));
+  }
+  if (options.author) {
+    list = list.filter(b => {
+      const aId = b.author && typeof b.author === 'object' ? b.author._id : b.author;
+      return aId === options.author;
+    });
+  }
+
+  const page = options.page || 1;
+  const limit = options.limit || 10;
+  const total = list.length;
+  const startIndex = (page - 1) * limit;
+  const paginated = list.slice(startIndex, startIndex + limit);
+
+  return {
+    success: true,
+    count: paginated.length,
+    data: paginated,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit) || 1
+    }
+  };
 }
 
 /**
@@ -139,12 +267,16 @@ async function fetchBlogs(options = {}) {
 async function fetchBlog(id) {
   try {
     const res = await fetch(`${API_URL}/blogs/${id}`);
-    const data = await res.json();
-    return data.success ? data.data : null;
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.data) return data.data;
+    }
   } catch (error) {
-    console.error('Error fetching blog:', error);
-    return null;
+    // Network failed, fallback
   }
+
+  const list = getDemoBlogs();
+  return list.find(b => b._id === id || b.id === id) || null;
 }
 
 /**
@@ -153,12 +285,22 @@ async function fetchBlog(id) {
 async function fetchMyBlogs() {
   try {
     const res = await fetchWithAuth(`${API_URL}/blogs/my`);
-    const data = await res.json();
-    return data.success ? data.data : [];
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) return data.data;
+    }
   } catch (error) {
-    console.error('Error fetching user blogs:', error);
-    return [];
+    // Network failed, fallback
   }
+
+  const currentUser = getCurrentUser();
+  if (!currentUser) return [];
+  const list = getDemoBlogs();
+  const currentUserId = currentUser._id || currentUser.id;
+  return list.filter(b => {
+    const aId = b.author && typeof b.author === 'object' ? (b.author._id || b.author.id) : b.author;
+    return aId === currentUserId || (currentUser.email && b.author && b.author.email === currentUser.email);
+  });
 }
 
 /**
@@ -170,16 +312,34 @@ async function apiCreateBlog(blogData) {
       method: 'POST',
       body: JSON.stringify(blogData)
     });
-    const data = await res.json();
-    
-    if (!data.success) {
-      showToast(data.message || 'Failed to create blog', 'error');
+    if (res.ok) {
+      const data = await res.json();
+      return data.success;
     }
-    return data.success;
   } catch (error) {
-    showToast(error.message || 'Failed to create blog', 'error');
-    return false;
+    // Network failed, fallback
   }
+
+  const currentUser = getCurrentUser();
+  const list = getDemoBlogs();
+  const words = blogData.content.trim().split(/\s+/).filter(Boolean).length;
+  const newBlog = {
+    _id: 'blog_' + Date.now(),
+    title: blogData.title,
+    category: blogData.category,
+    content: blogData.content,
+    image: blogData.image || '',
+    readTime: Math.max(1, Math.ceil(words / 200)),
+    createdAt: new Date().toISOString(),
+    author: {
+      _id: currentUser ? (currentUser._id || currentUser.id) : 'user_aashutosh_id',
+      name: currentUser ? currentUser.name : 'Aashutosh Raushan',
+      email: currentUser ? currentUser.email : 'aashutosh@example.com'
+    }
+  };
+  list.unshift(newBlog);
+  saveDemoBlogs(list);
+  return true;
 }
 
 /**
@@ -191,16 +351,30 @@ async function apiUpdateBlog(id, blogData) {
       method: 'PUT',
       body: JSON.stringify(blogData)
     });
-    const data = await res.json();
-    
-    if (!data.success) {
-      showToast(data.message || 'Failed to update blog', 'error');
+    if (res.ok) {
+      const data = await res.json();
+      return data.success;
     }
-    return data.success;
   } catch (error) {
-    showToast(error.message || 'Failed to update blog', 'error');
-    return false;
+    // Network failed, fallback
   }
+
+  const list = getDemoBlogs();
+  const index = list.findIndex(b => b._id === id || b.id === id);
+  if (index !== -1) {
+    const words = blogData.content.trim().split(/\s+/).filter(Boolean).length;
+    list[index] = {
+      ...list[index],
+      title: blogData.title,
+      category: blogData.category,
+      content: blogData.content,
+      image: blogData.image || list[index].image,
+      readTime: Math.max(1, Math.ceil(words / 200))
+    };
+    saveDemoBlogs(list);
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -211,16 +385,18 @@ async function apiDeleteBlog(id) {
     const res = await fetchWithAuth(`${API_URL}/blogs/${id}`, {
       method: 'DELETE'
     });
-    const data = await res.json();
-    
-    if (!data.success) {
-      showToast(data.message || 'Failed to delete blog', 'error');
+    if (res.ok) {
+      const data = await res.json();
+      return data.success;
     }
-    return data.success;
   } catch (error) {
-    showToast(error.message || 'Failed to delete blog', 'error');
-    return false;
+    // Network failed, fallback
   }
+
+  let list = getDemoBlogs();
+  list = list.filter(b => b._id !== id && b.id !== id);
+  saveDemoBlogs(list);
+  return true;
 }
 
 // ==========================================

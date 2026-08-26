@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const connectDB = require('./config/db');
 
 // Load env vars
@@ -11,25 +12,51 @@ connectDB();
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5000', 'http://127.0.0.1:5000'] : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+app.use(cors(corsOptions));
 
-// Routes
+// Body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health Check Endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'BlogSphere API is running',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/blogs', require('./routes/blogRoutes'));
 
+// Unmatched API Routes 404 Handler (Express 5 compatible)
+app.use('/api', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint ${req.originalUrl} not found`
+  });
+});
+
 // Serve Frontend Static Files
-const path = require('path');
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Any route that is not an API should serve the frontend's index.html (for client-side routing consistency)
+// Fallback for non-API client routes
 app.use((req, res, next) => {
   if (req.originalUrl.startsWith('/api')) {
     return next();
   }
-  // If the request is not for the API, serve the requested HTML file if it exists, otherwise fallback to index.html
-  res.sendFile(path.join(__dirname, '../frontend', req.path === '/' ? 'index.html' : req.path), (err) => {
+  const requestedFile = req.path === '/' ? 'index.html' : req.path;
+  res.sendFile(path.join(__dirname, '../frontend', requestedFile), (err) => {
     if (err) {
       res.sendFile(path.join(__dirname, '../frontend/index.html'));
     }
@@ -41,13 +68,16 @@ app.use((err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
     success: false,
-    message: err.message,
+    message: err.message || 'Internal Server Error',
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
   });
 });
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
+
+module.exports = { app, server };
+

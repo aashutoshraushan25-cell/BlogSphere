@@ -3,7 +3,7 @@
  * Integrates Auth module, CRUD operations via REST API, and UI interactivity
  */
 
-const API_URL = '/api';
+const API_URL = (typeof window !== 'undefined' && window.API_BASE_URL) ? window.API_BASE_URL : '/api';
 
 // DOM Elements & Initialization
 document.addEventListener('DOMContentLoaded', () => {
